@@ -1,0 +1,97 @@
+// Régua do Híbrido — modelo de dados (MySQL / Hostinger)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "foreignKeys"
+}
+
+enum Role {
+  ADMIN
+  ACCOUNTANT
+}
+
+enum Veredito {
+  OPTAR
+  LIMITROFE
+  NEGOCIAR
+  MANTER
+}
+
+enum LeadStatus {
+  NOVO
+  CONTATADO
+  CONVERTIDO
+  DESCARTADO
+}
+
+model User {
+  id         String   @id @default(cuid())
+  nome       String   @db.VarChar(120)
+  email      String   @unique @db.VarChar(191)
+  senha      String   @db.VarChar(100) // hash bcrypt
+  role       Role     @default(ACCOUNTANT)
+  // White-label: nome do escritório exibido no cabeçalho do PDF
+  escritorio String?  @db.VarChar(160)
+  crc        String?  @db.VarChar(30)
+  ativo      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  companies Company[]
+
+  @@map("users")
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  nome      String   @db.VarChar(160)
+  cnpj      String   @db.VarChar(14) // somente dígitos
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  simulations Simulation[]
+
+  // O mesmo CNPJ pode existir para contadores diferentes, mas não duplicado no mesmo tenant
+  @@unique([userId, cnpj])
+  @@index([userId])
+  @@map("companies")
+}
+
+model Simulation {
+  id        String   @id @default(cuid())
+  companyId String
+  // Snapshot dos inputs + premissas usados no cálculo (SimulationInput)
+  inputs    Json
+  // Snapshot dos resultados (SimulationResult) — garante que o PDF reflita o cálculo da época
+  resultado Json
+  veredito  Veredito
+  titulo    String?  @db.VarChar(160)
+  data      DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, data])
+  @@map("simulations")
+}
+
+model Lead {
+  id        String     @id @default(cuid())
+  nome      String     @db.VarChar(120)
+  email     String     @db.VarChar(191)
+  telefone  String     @db.VarChar(20)
+  crc       String     @db.VarChar(30)
+  status    LeadStatus @default(NOVO)
+  origem    String?    @db.VarChar(60)
+  createdAt DateTime   @default(now())
+
+  @@index([email])
+  @@index([createdAt])
+  @@map("leads")
+}
