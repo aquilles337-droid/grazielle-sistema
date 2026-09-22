@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // @react-pdf/renderer roda apenas no servidor (route handler do PDF)
-  serverExternalPackages: ["@react-pdf/renderer"],
+  // O @react-pdf/renderer é empacotado junto com a rota do PDF (não é marcado como
+  // externo). Assim as fontes padrão do pdfkit (Helvetica etc.), que ele carrega por
+  // import dinâmico, vão dentro do build — hospedagens que publicam só parte da
+  // node_modules (ex.: Hostinger) davam "Cannot find module .../Helvetica.cjs".
+  // Por garantia, os arquivos do pdfkit também entram no rastreamento de arquivos.
+  outputFileTracingIncludes: {
+    "/**": ["./node_modules/pdfkit/js/**/*"],
+  },
 };
 
 export default nextConfig;
