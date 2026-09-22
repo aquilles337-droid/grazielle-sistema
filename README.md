@@ -31,6 +31,14 @@ npm run dev
 
 Checks: `npm run typecheck` · `npm test` (motor de cálculo) · `npm run build`
 
+## Criar o banco só pelo phpMyAdmin
+
+`prisma/setup-phpmyadmin.sql` cria as 4 tabelas e o usuário ADMIN inicial. No phpMyAdmin, selecione o banco → aba **SQL** → cole o arquivo (troque antes o e-mail e o nome do admin no final) → **Executar**. A senha provisória do admin não fica no repositório; troque-a em **Minha conta** (`/painel/conta`) no primeiro acesso. Se o `schema.prisma` mudar, regenere o SQL:
+
+```bash
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
+```
+
 ## Deploy na Hostinger
 
 1. No hPanel, crie o banco MySQL e libere **MySQL remoto** para o IP do servidor da aplicação (se o app não rodar na mesma hospedagem).

@@ -25,6 +25,9 @@ export function AppHeader({
             <Link href="/painel" className={area === "painel" ? "font-semibold" : "text-muted-foreground hover:text-foreground"}>
               Empresas
             </Link>
+            <Link href="/painel/conta" className="text-muted-foreground hover:text-foreground">
+              Minha conta
+            </Link>
             {isAdmin && (
               <Link href="/admin" className={area === "admin" ? "font-semibold" : "text-muted-foreground hover:text-foreground"}>
                 Admin

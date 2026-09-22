@@ -35,6 +35,14 @@ export const accountantSchema = z.object({
   crc: z.string().trim().toUpperCase().max(30).optional().transform((v) => v || undefined),
 });
 
+export const changePasswordSchema = z
+  .object({
+    senhaAtual: z.string().min(1, "Informe a senha atual").max(100),
+    novaSenha: z.string().min(8, "Mínimo de 8 caracteres").max(100),
+    confirmacao: z.string(),
+  })
+  .refine((d) => d.novaSenha === d.confirmacao, { message: "As senhas não conferem", path: ["confirmacao"] });
+
 export const simulationInputSchema = z.object({
   empresa: z.object({
     anexo: z.enum(["I", "II", "III", "IV", "V"]),
