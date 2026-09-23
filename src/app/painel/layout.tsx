@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AppHeader } from "@/components/shared/app-header";
 import { DesenvolvidoPor } from "@/components/brand/logo";
+import { TourGuiado } from "@/components/tour/tour-guiado";
 import { AVISO_RENOVACAO_DIAS, diasRestantes } from "@/lib/billing/planos";
 import { formatDate } from "@/lib/format";
 
@@ -43,6 +44,7 @@ export default async function PainelLayout({ children }: { children: React.React
         </div>
       )}
       <main className="container flex-1 py-8">{children}</main>
+      <TourGuiado userId={user.id} />
       <footer className="border-t bg-card py-4">
         <div className="container flex justify-center">
           <DesenvolvidoPor />

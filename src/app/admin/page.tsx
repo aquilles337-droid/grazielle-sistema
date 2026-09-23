@@ -22,7 +22,7 @@ export default async function AdminPage() {
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div data-tour="adm-stats" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Assinantes com acesso" value={assinantes} />
         <Stat label="Contadores cadastrados" value={contadores.length} />
         <Stat label="Recebido no mês" value={formatBRL(receitaMes)} />
@@ -30,7 +30,7 @@ export default async function AdminPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <Card>
+        <Card data-tour="adm-usuarios">
           <CardHeader>
             <CardTitle>Usuários</CardTitle>
             <CardDescription>Assinantes com acesso ao simulador.</CardDescription>
@@ -92,7 +92,7 @@ export default async function AdminPage() {
           </CardContent>
         </Card>
 
-        <Card className="h-fit">
+        <Card data-tour="adm-criar" className="h-fit">
           <CardHeader>
             <CardTitle className="text-base">Criar credencial de contador</CardTitle>
             <CardDescription>Envie o e-mail e a senha ao assinante por canal seguro.</CardDescription>
@@ -103,7 +103,7 @@ export default async function AdminPage() {
         </Card>
       </div>
 
-      <Card>
+      <Card data-tour="adm-pagamentos">
         <CardHeader>
           <CardTitle>Pagamentos</CardTitle>
           <CardDescription>Últimos 50 (Pix e cobranças do cartão).</CardDescription>
@@ -147,7 +147,7 @@ export default async function AdminPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card data-tour="adm-leads">
         <CardHeader>
           <CardTitle>Leads da landing page</CardTitle>
           <CardDescription>Últimos 200 cadastros.</CardDescription>

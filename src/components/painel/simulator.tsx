@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { TOUR_EXEMPLO_EVENTO } from "@/components/tour/tours";
 import { useRouter } from "next/navigation";
 import { Loader2, RotateCcw, Save } from "lucide-react";
 import { saveSimulation } from "@/actions/simulations";
@@ -109,6 +110,18 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
   const [saving, startSaving] = useTransition();
 
+  // Apresentação guiada: preenche um exemplo (só com o formulário vazio) para mostrar os resultados
+  useEffect(() => {
+    const exemplo = () =>
+      setForm((f) =>
+        f.receitaMensal
+          ? f
+          : { ...f, anexo: "I", faixa: 3, rbt12: "600000", receitaMensal: "50000", pctB2B: "80", pctComprasCreditaveis: "60" },
+      );
+    window.addEventListener(TOUR_EXEMPLO_EVENTO, exemplo);
+    return () => window.removeEventListener(TOUR_EXEMPLO_EVENTO, exemplo);
+  }, []);
+
   const input = useMemo(() => toInput(form), [form]);
   const result = useMemo(() => simular(input), [input]);
   const pronto = input.empresa.receitaMensal > 0;
@@ -150,7 +163,7 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
             <CardTitle className="text-base">Dados da empresa</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <div className="grid grid-cols-[1fr_110px] gap-3">
+            <div data-tour="sim-anexo" className="grid grid-cols-[1fr_110px] gap-3">
               <Field label="Anexo do Simples">
                 <NativeSelect value={form.anexo} onChange={(e) => set("anexo", e.target.value as Anexo)}>
                   {ANEXOS.map((a) => (
@@ -173,7 +186,7 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
             {faixaSugerida && faixaSugerida !== form.faixa && (
               <p className="-mt-2 text-xs text-amber-700">Pelo RBT12 informado, a faixa seria a {faixaSugerida}ª.</p>
             )}
-            <div className="grid grid-cols-2 gap-3">
+            <div data-tour="sim-receitas" className="grid grid-cols-2 gap-3">
               <Field label="RBT12 (R$)">
                 <Input type="number" min={0} step="0.01" value={form.rbt12} onChange={(e) => onRbt12(e.target.value)} />
               </Field>
@@ -190,7 +203,7 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
             {input.empresa.rbt12 > LIMITE_SIMPLES && (
               <p className="-mt-2 text-xs text-destructive">RBT12 acima do limite do Simples (R$ 4,8 mi).</p>
             )}
-            <div className="grid grid-cols-2 gap-3">
+            <div data-tour="sim-percentuais" className="grid grid-cols-2 gap-3">
               <PctField label="% Exportação" value={form.pctExportacao} onChange={(v) => set("pctExportacao", v)} />
               <PctField label="% B2B (receita interna)" value={form.pctB2B} onChange={(v) => set("pctB2B", v)} />
               <PctField
@@ -205,7 +218,7 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="sim-premissas">
           <CardHeader>
             <CardTitle className="text-base">Premissas</CardTitle>
             <CardDescription>Valores padrão da LC 214/2025 — ajuste se necessário.</CardDescription>
@@ -232,7 +245,13 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
               <PctField label="IVA pleno" value={form.ivaPleno} onChange={(v) => set("ivaPleno", v)} />
               <PctField label="Repasse esperado" value={form.repasseEsperado} onChange={(v) => set("repasseEsperado", v)} />
             </div>
-            <Button variant="ghost" size="sm" className="justify-self-start" onClick={() => setForm((f) => ({ ...f, ...premissasPadraoForm() }))}>
+            <Button
+              data-tour="sim-restaurar"
+              variant="ghost"
+              size="sm"
+              className="justify-self-start"
+              onClick={() => setForm((f) => ({ ...f, ...premissasPadraoForm() }))}
+            >
               <RotateCcw /> Restaurar premissas padrão
             </Button>
           </CardContent>
@@ -249,7 +268,7 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
           </Card>
         ) : (
           <>
-            <Card className={cn("border-2", VEREDITO_STYLE[result.veredito])}>
+            <Card data-tour="sim-veredito" className={cn("border-2", VEREDITO_STYLE[result.veredito])}>
               <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Veredito</p>
@@ -260,7 +279,7 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
               </CardContent>
             </Card>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div data-tour="sim-kpis" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Kpi label="Caixa sem negociar" value={result.caixaSemNegociar} />
               <Kpi label={`Caixa c/ repasse de ${formatPct(input.premissas.repasseEsperado, 0)}`} value={result.caixaComRepasse} />
               <Kpi label="Excedente na cadeia" value={result.excedenteCadeia} />
@@ -274,7 +293,7 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
               </Card>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div data-tour="sim-cenarios" className="grid gap-4 lg:grid-cols-2">
               <ScenarioCard
                 title="Cenário A — Simples puro"
                 subtitle="IBS e CBS dentro do DAS"
@@ -298,7 +317,7 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
               />
             </div>
 
-            <Card>
+            <Card data-tour="sim-memoria">
               <CardHeader>
                 <CardTitle className="text-base">Memória de cálculo</CardTitle>
               </CardHeader>
@@ -307,7 +326,7 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
               </CardContent>
             </Card>
 
-            <Card>
+            <Card data-tour="sim-salvar">
               <CardContent className="flex flex-col gap-3 p-6 sm:flex-row sm:items-end">
                 <div className="grid flex-1 gap-2">
                   <Label htmlFor="titulo">Identificação da simulação (opcional)</Label>

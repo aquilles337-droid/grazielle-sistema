@@ -75,7 +75,7 @@ export default async function AssinaturaPage({
       {aguardandoCartao && <AutoRefresh seconds={8} />}
 
       {/* Situação */}
-      <Card className={acesso ? "border-l-4 border-l-accent" : "border-l-4 border-l-amber-400"}>
+      <Card data-tour="ass-status" className={acesso ? "border-l-4 border-l-accent" : "border-l-4 border-l-amber-400"}>
         <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             {acesso ? (
@@ -129,7 +129,7 @@ export default async function AssinaturaPage({
 
       {/* Assinatura no cartão */}
       {assinatura && (
-        <Card>
+        <Card data-tour="ass-cartao-ativo">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <CreditCard className="h-4 w-4" /> Assinatura no cartão
@@ -173,7 +173,7 @@ export default async function AssinaturaPage({
       </Card>
 
       {pagamentos.length > 0 && (
-        <Card>
+        <Card data-tour="ass-historico">
           <CardHeader>
             <CardTitle className="text-base">Histórico de pagamentos</CardTitle>
           </CardHeader>

@@ -51,3 +51,48 @@
     color: transparent;
   }
 }
+
+/* Apresentação guiada (driver.js) nas cores da marca */
+.driver-popover.rh-tour {
+  border-radius: 12px;
+  border-top: 4px solid #066782;
+  padding: 18px 18px 14px;
+  max-width: 360px;
+  box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.45);
+  font-family: inherit;
+}
+.driver-popover.rh-tour .driver-popover-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1c1c1c;
+}
+.driver-popover.rh-tour .driver-popover-description {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #4a4f52;
+}
+.driver-popover.rh-tour .driver-popover-description b {
+  color: #1c1c1c;
+}
+.driver-popover.rh-tour .driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: #066782;
+  font-weight: 600;
+}
+.driver-popover.rh-tour .driver-popover-footer button {
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  text-shadow: none;
+  border: 1px solid #d5dde0;
+  background: #fff;
+  color: #1c1c1c;
+}
+.driver-popover.rh-tour .driver-popover-footer .driver-popover-next-btn {
+  background: linear-gradient(120deg, #03485c 0%, #066782 55%, #0b86a6 100%);
+  border-color: transparent;
+  color: #fff;
+}
+.driver-popover.rh-tour .driver-popover-close-btn {
+  color: #7a8286;
+}

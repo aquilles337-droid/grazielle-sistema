@@ -15,7 +15,7 @@ export default async function PainelPage() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-      <Card>
+      <Card data-tour="lista-empresas">
         <CardHeader>
           <CardTitle>Minhas empresas</CardTitle>
           <CardDescription>Carteira do Simples Nacional em triagem.</CardDescription>
@@ -72,7 +72,7 @@ export default async function PainelPage() {
         </CardContent>
       </Card>
 
-      <Card className="h-fit">
+      <Card data-tour="form-empresa" className="h-fit">
         <CardHeader>
           <CardTitle className="text-base">Nova empresa</CardTitle>
         </CardHeader>

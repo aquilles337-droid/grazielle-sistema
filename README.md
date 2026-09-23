@@ -54,6 +54,13 @@ npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma 
 - Webhook: `https://SEU-DOMINIO/api/webhooks/mercadopago`, eventos **Pagamentos**, **Planos e assinaturas** (assinatura e pagamento recorrente).
 - Banco existente: rode no phpMyAdmin `prisma/update-002-assinaturas.sql` e depois `prisma/update-003-cpf-cartao.sql`.
 
+## Apresentação guiada (onboarding)
+
+Tour com destaque de cada botão (driver.js), por tela: Assinatura, Empresas, Simulador, Minha conta e Admin.
+Abre sozinho na primeira visita de cada tela (lembrado por usuário no navegador), pode ser repetido pelo botão
+**Tutorial** do cabeçalho ou em **Minha conta → Rever apresentação**. Roteiros em `src/components/tour/tours.ts`;
+os elementos destacados são marcados com `data-tour="..."`.
+
 ## Deploy na Hostinger
 
 1. No hPanel, crie o banco MySQL e libere **MySQL remoto** para o IP do servidor da aplicação (se o app não rodar na mesma hospedagem).

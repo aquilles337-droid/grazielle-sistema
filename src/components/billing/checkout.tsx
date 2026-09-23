@@ -113,7 +113,7 @@ export function Checkout({
   return (
     <div className="grid gap-6">
       {/* Forma de pagamento */}
-      <div className="grid gap-2">
+      <div data-tour="ass-forma" className="grid gap-2">
         <Label>Forma de pagamento</Label>
         <div className="grid gap-3 sm:grid-cols-2">
           <OptionCard
@@ -142,7 +142,7 @@ export function Checkout({
       </div>
 
       {/* Plano */}
-      <div className="grid gap-2">
+      <div data-tour="ass-plano" className="grid gap-2">
         <Label>Plano</Label>
         <div className="grid gap-3 sm:grid-cols-2">
           {(["MENSAL", "ANUAL"] as const).map((p) => (
@@ -178,7 +178,7 @@ export function Checkout({
       {erro && <p className="rounded-md bg-red-50 p-3 text-sm text-destructive">{erro}</p>}
 
       {metodo === "CARTAO" ? (
-        <div className="grid gap-4">
+        <div data-tour="ass-pagar" className="grid gap-4">
           {trialDisponivel && (
             <div className="rounded-md border border-accent/25 bg-accent/5 p-3 text-sm text-accent">
               <strong>Teste grátis por {TRIAL_DIAS} dias.</strong> Cadastre o cartão e use tudo liberado. A primeira
@@ -200,13 +200,13 @@ export function Checkout({
           )}
         </div>
       ) : (
-        <>
+        <div data-tour="ass-pagar" className="grid gap-2">
           <Button size="lg" variant="accent" onClick={gerarPix} disabled={pending}>
             {pending ? <Loader2 className="animate-spin" /> : <QrCode />}
             Gerar Pix de {formatBRL(PLANOS[plano].precos.PIX)}
           </Button>
           <p className="text-center text-xs text-muted-foreground">Pagamento processado pelo Mercado Pago.</p>
-        </>
+        </div>
       )}
     </div>
   );

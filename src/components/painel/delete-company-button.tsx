@@ -12,6 +12,7 @@ export function DeleteCompanyButton({ id, nome }: { id: string; nome: string }) 
 
   return (
     <Button
+      data-tour="btn-excluir-empresa"
       variant="outline"
       size="sm"
       disabled={pending}
