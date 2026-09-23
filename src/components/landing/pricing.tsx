@@ -24,7 +24,7 @@ export function Pricing() {
         <p className="mt-3 text-muted-foreground">
           Assine no cartão com renovação automática ou pague no Pix com desconto.
         </p>
-        <Badge variant="success" className="mt-4 px-3 py-1 text-sm">
+        <Badge className="mt-4 border-accent/30 bg-accent/5 px-3 py-1 text-sm text-accent">
           Teste grátis por {TRIAL_DIAS} dias no cartão — cancele antes e não paga nada
         </Badge>
       </div>
@@ -34,9 +34,9 @@ export function Pricing() {
           const destaque = plano === "ANUAL";
           const periodo = plano === "MENSAL" ? "mês" : "ano";
           return (
-            <Card key={plano} className={cn("relative flex flex-col", destaque && "border-2 border-primary shadow-lg")}>
+            <Card key={plano} className={cn("relative flex flex-col", destaque && "border-2 border-accent shadow-xl")}>
               {destaque && (
-                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1">
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap border-transparent bg-petroleo px-3 py-1 text-white">
                   Mais vantajoso · economize {formatBRL(economia)}
                 </Badge>
               )}

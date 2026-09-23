@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { DesenvolvidoPor, FaixasDecorativas, Logo } from "@/components/brand/logo";
 import {
   ArrowRight,
   BadgeCheck,
-  Calculator,
   FileText,
   Gauge,
   Lock,
@@ -11,7 +11,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LeadForm } from "@/components/landing/lead-form";
 import { Pricing } from "@/components/landing/pricing";
@@ -81,10 +80,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Calculator className="h-4 w-4" />
-            </span>
-            Régua do Híbrido
+            <Logo />
           </Link>
           <nav className="flex items-center gap-2">
             <Button variant="ghost" asChild className="hidden sm:inline-flex">
@@ -102,15 +98,16 @@ export default function LandingPage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background">
-          <div className="container grid items-center gap-12 py-16 md:py-24 lg:grid-cols-2">
+        <section className="relative overflow-hidden">
+          <FaixasDecorativas className="absolute -bottom-10 -right-24 hidden w-[720px] opacity-[0.12] lg:block" />
+          <div className="container relative grid items-center gap-12 py-16 md:py-24 lg:grid-cols-2">
             <div className="space-y-6">
-              <Badge variant="info" className="text-sm">
+              <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-sm font-medium text-accent">
                 Reforma Tributária · LC 214/2025 · Simples Nacional
-              </Badge>
+              </span>
               <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">
                 Não deixe seu cliente pagar imposto a mais.{" "}
-                <span className="text-primary">Simule o impacto da Reforma Tributária em segundos.</span>
+                <span className="text-petroleo-gradient">Simule o impacto da Reforma Tributária em segundos.</span>
               </h1>
               <p className="max-w-xl text-lg text-muted-foreground">
                 A partir de 2027, empresas do Simples podem recolher IBS e CBS por fora e gerar crédito integral para
@@ -133,10 +130,11 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
+              <DesenvolvidoPor className="pt-2" />
             </div>
 
             {/* Preview do resultado */}
-            <Card className="shadow-xl">
+            <Card className="overflow-hidden border-t-4 border-t-accent shadow-xl">
               <CardHeader>
                 <CardDescription>Exemplo · Comércio, Anexo I, faixa 3 · receita de {formatBRL(50_000)}/mês</CardDescription>
                 <CardTitle className="flex items-center justify-between">
@@ -151,9 +149,9 @@ export default function LandingPage() {
                   <Metric label="Crédito extra ao cliente B2B" value={formatBRL(exemplo.ganhoCliente)} positive />
                   <Metric label="Repasse mínimo" value={formatPct(exemplo.repasseMin, 1)} />
                 </div>
-                <div className="rounded-md bg-accent/10 p-4">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Caixa com 50% de repasse</p>
-                  <p className="text-2xl font-bold text-accent">{formatBRL(exemplo.caixaComRepasse)}/mês</p>
+                <div className="rounded-md bg-grafite p-4 text-white">
+                  <p className="text-xs uppercase tracking-wide text-white/70">Caixa com 50% de repasse</p>
+                  <p className="text-2xl font-bold text-[#5fc3dd]">{formatBRL(exemplo.caixaComRepasse)}/mês</p>
                 </div>
               </CardContent>
             </Card>
@@ -170,9 +168,9 @@ export default function LandingPage() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map(({ icon: Icon, title, desc }) => (
-              <Card key={title} className="transition-shadow hover:shadow-md">
+              <Card key={title} className="border-b-2 border-b-transparent transition-all hover:border-b-accent hover:shadow-md">
                 <CardHeader>
-                  <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-md bg-grafite text-white shadow-sm">
                     <Icon className="h-5 w-5" />
                   </span>
                   <CardTitle className="text-base">{title}</CardTitle>
@@ -184,18 +182,19 @@ export default function LandingPage() {
         </section>
 
         {/* Como funciona */}
-        <section id="como-funciona" className="scroll-mt-16 border-y bg-secondary/40 py-16 md:py-24">
-          <div className="container">
+        <section id="como-funciona" className="relative scroll-mt-16 overflow-hidden bg-grafite py-16 text-white md:py-24">
+          <FaixasDecorativas className="absolute -bottom-24 -left-20 w-[520px] opacity-30" />
+          <div className="container relative">
             <h2 className="mb-12 text-center text-3xl font-bold tracking-tight">Como funciona</h2>
             <div className="grid gap-8 md:grid-cols-3">
               {passos.map((p) => (
                 <div key={p.n} className="flex gap-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-petroleo text-lg font-bold text-white shadow">
                     {p.n}
                   </span>
                   <div>
                     <h3 className="font-semibold">{p.title}</h3>
-                    <p className="text-sm text-muted-foreground">{p.desc}</p>
+                    <p className="text-sm text-white/70">{p.desc}</p>
                   </div>
                 </div>
               ))}
@@ -238,12 +237,18 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t py-8">
-        <div className="container flex flex-col items-center justify-between gap-2 text-sm text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} Régua do Híbrido. Ferramenta de triagem — não substitui o parecer profissional.</p>
-          <Link href="/login" className="hover:text-foreground">
-            Área do contador
-          </Link>
+      <footer className="border-t-4 border-t-accent bg-card py-10">
+        <div className="container grid gap-6 text-sm text-muted-foreground md:grid-cols-[1fr_auto] md:items-center">
+          <div className="space-y-3">
+            <Logo />
+            <p>© {new Date().getFullYear()} Régua do Híbrido. Ferramenta de triagem — não substitui o parecer profissional.</p>
+          </div>
+          <div className="flex flex-col items-start gap-3 md:items-end">
+            <DesenvolvidoPor />
+            <Link href="/login" className="hover:text-foreground">
+              Área do contador
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

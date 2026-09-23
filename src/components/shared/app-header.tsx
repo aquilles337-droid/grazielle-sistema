@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calculator } from "lucide-react";
+import { Logo } from "@/components/brand/logo";
 import { SignOutButton } from "./sign-out-button";
 
 export function AppHeader({
@@ -12,14 +12,11 @@ export function AppHeader({
   area: "painel" | "admin";
 }) {
   return (
-    <header className="border-b bg-background">
+    <header className="border-b border-b-accent/20 bg-card shadow-sm">
       <div className="container flex h-16 items-center justify-between gap-4">
         <div className="flex items-center gap-6">
           <Link href="/painel" className="flex items-center gap-2 font-bold">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Calculator className="h-4 w-4" />
-            </span>
-            <span className="hidden sm:inline">Régua do Híbrido</span>
+            <Logo />
           </Link>
           <nav className="flex gap-4 text-sm">
             <Link href="/painel" className={area === "painel" ? "font-semibold" : "text-muted-foreground hover:text-foreground"}>

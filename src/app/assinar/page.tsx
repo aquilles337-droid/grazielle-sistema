@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { DesenvolvidoPor, Logo } from "@/components/brand/logo";
 import { redirect } from "next/navigation";
-import { Calculator, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { PLANOS, TRIAL_DIAS, type MetodoTipo, type PlanoTipo } from "@/lib/billing/planos";
 import { formatBRL } from "@/lib/format";
@@ -27,13 +28,10 @@ export default async function AssinarPage({
 
   return (
     <div className="min-h-screen bg-secondary/40">
-      <header className="border-b bg-background">
+      <header className="border-b bg-card">
         <div className="container flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Calculator className="h-4 w-4" />
-            </span>
-            Régua do Híbrido
+            <Logo />
           </Link>
           <Link href={`/login?callbackUrl=${encodeURIComponent(destino)}`} className="text-sm font-medium hover:underline">
             Já tenho conta
@@ -70,7 +68,7 @@ export default async function AssinarPage({
                 <span className="font-semibold">{formatBRL(p.precos.PIX)}</span>
               </div>
             </div>
-            <p className="rounded-md bg-emerald-50 p-3 text-emerald-900">
+            <p className="rounded-md border border-accent/25 bg-accent/5 p-3 text-accent">
               <strong>{TRIAL_DIAS} dias grátis</strong> assinando no cartão. A 1ª cobrança só acontece depois do teste.
             </p>
             <ul className="grid gap-2 border-t pt-4">
@@ -91,6 +89,9 @@ export default async function AssinarPage({
           </CardContent>
         </Card>
       </main>
+      <footer className="pb-8 text-center">
+        <DesenvolvidoPor />
+      </footer>
     </div>
   );
 }

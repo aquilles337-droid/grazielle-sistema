@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { AppHeader } from "@/components/shared/app-header";
+import { DesenvolvidoPor } from "@/components/brand/logo";
 
 export const dynamic = "force-dynamic";
 
@@ -10,9 +11,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (user.role !== "ADMIN") redirect("/painel");
 
   return (
-    <div className="min-h-screen bg-secondary/30">
+    <div className="flex min-h-screen flex-col bg-secondary/40">
       <AppHeader nome={user.nome} isAdmin area="admin" />
-      <main className="container py-8">{children}</main>
+      <main className="container flex-1 py-8">{children}</main>
+      <footer className="border-t bg-card py-4">
+        <div className="container flex justify-center">
+          <DesenvolvidoPor />
+        </div>
+      </footer>
     </div>
   );
 }

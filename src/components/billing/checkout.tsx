@@ -152,11 +152,11 @@ export function Checkout({
               onClick={() => setPlano(p)}
               className={cn(
                 "relative rounded-lg border-2 p-4 text-left transition-colors",
-                plano === p ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
+                plano === p ? "border-accent bg-accent/5" : "border-border hover:border-accent/40",
               )}
             >
               {p === "ANUAL" && (
-                <Badge variant="success" className="absolute right-3 top-3">
+                <Badge className="absolute right-3 top-3 border-transparent bg-petroleo text-white">
                   Economize {formatBRL(economiaAnual)}
                 </Badge>
               )}
@@ -180,7 +180,7 @@ export function Checkout({
       {metodo === "CARTAO" ? (
         <div className="grid gap-4">
           {trialDisponivel && (
-            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+            <div className="rounded-md border border-accent/25 bg-accent/5 p-3 text-sm text-accent">
               <strong>Teste grátis por {TRIAL_DIAS} dias.</strong> Cadastre o cartão e use tudo liberado. A primeira
               cobrança de {formatBRL(PLANOS[plano].precos.CARTAO)} só acontece depois do teste — cancele antes e não paga
               nada.
@@ -236,14 +236,14 @@ function OptionCard({
       onClick={onClick}
       className={cn(
         "flex gap-3 rounded-lg border-2 p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-        selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
+        selected ? "border-accent bg-accent/5" : "border-border hover:border-accent/40",
       )}
     >
       <span className="mt-0.5 text-primary">{icon}</span>
       <span>
         <span className="flex flex-wrap items-center gap-2 font-semibold">
           {title}
-          {badge && <Badge variant="success">{badge}</Badge>}
+          {badge && <Badge className="bg-petroleo border-transparent text-white">{badge}</Badge>}
         </span>
         <span className="block text-xs text-muted-foreground">{desc}</span>
       </span>

@@ -76,7 +76,12 @@ export function CardBrick({
           customization: {
             // Assinatura recorrente exige cartão de crédito, à vista
             paymentMethods: { maxInstallments: 1, types: { excluded: ["debit_card", "prepaid_card"] } },
-            visual: { texts: { formSubmit: textoBotao }, hideFormTitle: true },
+            visual: {
+              texts: { formSubmit: textoBotao },
+              hideFormTitle: true,
+              // Cores da marca (petróleo) no formulário do Mercado Pago
+              style: { customVariables: { baseColor: "#066782", buttonTextColor: "#ffffff" } },
+            },
           },
           callbacks: {
             onReady: () => !cancelado && setEstado("pronto"),

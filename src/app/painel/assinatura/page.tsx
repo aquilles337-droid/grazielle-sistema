@@ -75,11 +75,11 @@ export default async function AssinaturaPage({
       {aguardandoCartao && <AutoRefresh seconds={8} />}
 
       {/* Situação */}
-      <Card className={acesso ? "border-emerald-300" : "border-amber-300"}>
+      <Card className={acesso ? "border-l-4 border-l-accent" : "border-l-4 border-l-amber-400"}>
         <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             {acesso ? (
-              <CalendarCheck className="mt-0.5 h-6 w-6 text-emerald-600" />
+              <CalendarCheck className="mt-0.5 h-6 w-6 text-accent" />
             ) : (
               <CalendarX className="mt-0.5 h-6 w-6 text-amber-600" />
             )}

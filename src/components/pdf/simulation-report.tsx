@@ -8,8 +8,10 @@ import { formatBRL, formatCNPJ, formatDate, formatPct } from "@/lib/format";
  * cobre acentuação pt-BR (WinAnsi); evite símbolos fora desse conjunto (Δ, −, ≤).
  */
 
+// Paleta da marca: grafite + petróleo
 const C = {
-  primary: "#12408f",
+  primary: "#066782",
+  grafite: "#1c1c1c",
   text: "#0f172a",
   muted: "#64748b",
   border: "#e2e8f0",
@@ -25,7 +27,15 @@ const VEREDITO_COR: Record<VereditoTipo, { bg: string; fg: string }> = {
 
 const s = StyleSheet.create({
   page: { paddingTop: 0, paddingBottom: 56, paddingHorizontal: 0, fontSize: 9, fontFamily: "Helvetica", color: C.text },
-  header: { backgroundColor: C.primary, color: "#fff", paddingVertical: 18, paddingHorizontal: 36, marginBottom: 18 },
+  header: {
+    backgroundColor: C.grafite,
+    color: "#fff",
+    paddingVertical: 18,
+    paddingHorizontal: 36,
+    marginBottom: 18,
+    borderBottomWidth: 4,
+    borderBottomColor: C.primary,
+  },
   headerOffice: { fontSize: 15, fontFamily: "Helvetica-Bold" },
   headerSub: { fontSize: 9, marginTop: 3, opacity: 0.85 },
   body: { paddingHorizontal: 36 },

@@ -4,6 +4,7 @@ import { AlertTriangle } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AppHeader } from "@/components/shared/app-header";
+import { DesenvolvidoPor } from "@/components/brand/logo";
 import { AVISO_RENOVACAO_DIAS, diasRestantes } from "@/lib/billing/planos";
 import { formatDate } from "@/lib/format";
 
@@ -27,7 +28,7 @@ export default async function PainelLayout({ children }: { children: React.React
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30">
+    <div className="flex min-h-screen flex-col bg-secondary/40">
       <AppHeader nome={user.nome} isAdmin={user.role === "ADMIN"} area="painel" />
       {aviso && (
         <div className="border-b border-amber-200 bg-amber-50">
@@ -41,7 +42,12 @@ export default async function PainelLayout({ children }: { children: React.React
           </div>
         </div>
       )}
-      <main className="container py-8">{children}</main>
+      <main className="container flex-1 py-8">{children}</main>
+      <footer className="border-t bg-card py-4">
+        <div className="container flex justify-center">
+          <DesenvolvidoPor />
+        </div>
+      </footer>
     </div>
   );
 }
