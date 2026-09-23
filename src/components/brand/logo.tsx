@@ -54,9 +54,7 @@ export function DesenvolvidoPor({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2 text-xs text-muted-foreground", className)}>
       Desenvolvido por
-      <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-white shadow-sm">
-        <Image src="/logon-contabilidade.png" alt="Logo Logon Contabilidade" width={28} height={28} className="h-7 w-7" />
-      </span>
+      <Image src="/logon-contabilidade.png" alt="Logo Logon Contabilidade" width={28} height={28} className="h-7 w-7" />
       <span className="font-semibold text-foreground">{DESENVOLVEDORA}</span>
     </span>
   );
