@@ -126,12 +126,18 @@ export function criarPagamentoPix(params: {
   });
 }
 
+/**
+ * Assinatura recorrente com o cartão digitado no próprio site (Card Payment Brick).
+ * Com card_token_id + status "authorized" a assinatura nasce ativa — o cliente não
+ * precisa de conta nem login no Mercado Pago.
+ */
 export function criarAssinaturaCartao(params: {
   assinaturaId: string;
   valor: number;
   meses: number;
   descricao: string;
   emailPagador: string;
+  cardTokenId: string;
   trialDias?: number;
 }) {
   return mp<MpPreapproval>("/preapproval", {
@@ -141,7 +147,8 @@ export function criarAssinaturaCartao(params: {
       reason: params.descricao,
       external_reference: params.assinaturaId,
       payer_email: params.emailPagador,
-      back_url: urlPublica("/painel/assinatura?retorno=cartao") ?? "https://www.mercadopago.com.br",
+      card_token_id: params.cardTokenId,
+      back_url: urlPublica("/painel/assinatura") ?? "https://www.mercadopago.com.br",
       auto_recurring: {
         frequency: params.meses,
         frequency_type: "months",
@@ -150,9 +157,20 @@ export function criarAssinaturaCartao(params: {
         // Teste grátis: o cartão é validado agora e a 1ª cobrança ocorre após o período
         ...(params.trialDias ? { free_trial: { frequency: params.trialDias, frequency_type: "days" } } : {}),
       },
-      status: "pending",
+      status: "authorized",
     }),
   });
+}
+
+/** Mensagem amigável a partir do erro do Mercado Pago ao criar a assinatura. */
+export function mensagemErroCartao(e: unknown) {
+  const body = e instanceof MercadoPagoError ? JSON.stringify(e.body ?? "").toLowerCase() : "";
+  if (body.includes("insufficient") || body.includes("saldo")) return "Cartão sem limite disponível.";
+  if (body.includes("cvv") || body.includes("security_code")) return "Código de segurança inválido.";
+  if (body.includes("expir")) return "Cartão vencido ou data de validade inválida.";
+  if (body.includes("token")) return "Os dados do cartão expiraram. Digite o cartão novamente.";
+  if (body.includes("rejected") || body.includes("recus")) return "Cartão recusado pelo emissor. Tente outro cartão.";
+  return "Não foi possível aprovar o cartão. Confira os dados ou tente outro cartão.";
 }
 
 export const buscarPagamento = (id: string | number) => mp<MpPayment>(`/v1/payments/${encodeURIComponent(String(id))}`);

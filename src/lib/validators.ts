@@ -52,11 +52,22 @@ export const signupSchema = z
   })
   .refine((d) => d.senha === d.confirmacao, { message: "As senhas não conferem", path: ["confirmacao"] });
 
-export const checkoutSchema = z.object({
+export const pixSchema = z.object({
   plano: z.enum(["MENSAL", "ANUAL"]),
-  metodo: z.enum(["CARTAO", "PIX"]),
-  // E-mail da conta Mercado Pago do pagador (assinatura no cartão)
-  emailPagador: z.string().trim().toLowerCase().email("E-mail inválido").max(191).optional(),
+});
+
+/** Dados vindos do Card Payment Brick (o número do cartão nunca passa pelo nosso servidor). */
+export const cartaoSchema = z.object({
+  plano: z.enum(["MENSAL", "ANUAL"]),
+  cardToken: z.string().trim().min(8).max(200),
+  docTipo: z.string().trim().max(10).optional(),
+  docNumero: z
+    .string()
+    .optional()
+    .transform((v) => (v ? onlyDigits(v) : undefined))
+    .pipe(z.string().max(14).optional()),
+  // Cliente já foi avisado de que o CPF usou o teste e aceitou cobrança imediata
+  aceitarSemTrial: z.boolean().optional(),
 });
 
 export const changePasswordSchema = z

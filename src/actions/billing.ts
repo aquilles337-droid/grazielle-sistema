@@ -4,29 +4,30 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { checkoutSchema, signupSchema, type ActionResult } from "@/lib/validators";
+import { cartaoSchema, pixSchema, signupSchema, type ActionResult } from "@/lib/validators";
 import { PLANOS, TRIAL_DIAS, precoPlano } from "@/lib/billing/planos";
 import * as MP from "@/lib/billing/mercadopago";
-import { processarPagamentoMP } from "@/lib/billing/processar";
+import { processarPagamentoMP, sincronizarPreapproval } from "@/lib/billing/processar";
 import { formToObject, handleActionError, zodFail } from "./_helpers";
 
 const PIX_VALIDADE_MIN = 60;
 
-/**
- * Teste grátis só para quem nunca usou nem pagou, e cujo e-mail do Mercado Pago
- * não iniciou teste em outra conta (evita criar contas novas para repetir o teste).
- */
-async function trialDisponivel(userId: string, emailPagador?: string) {
-  const [user, pagou, emailJaUsado] = await Promise.all([
+/** Teste grátis só para conta que nunca usou teste nem pagou. */
+async function trialDisponivel(userId: string) {
+  const [user, pagou] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { trialUsadoEm: true } }),
     prisma.pagamento.count({ where: { userId, status: { in: ["APROVADO", "ESTORNADO"] } } }),
-    emailPagador
-      ? prisma.assinatura.count({
-          where: { emailPagador, trialDias: { gt: 0 }, status: { not: "PENDENTE" }, userId: { not: userId } },
-        })
-      : Promise.resolve(0),
   ]);
-  return !user?.trialUsadoEm && pagou === 0 && emailJaUsado === 0;
+  return !user?.trialUsadoEm && pagou === 0;
+}
+
+/** O CPF/CNPJ do titular do cartão já fez teste grátis em outra conta? */
+async function documentoJaUsouTrial(userId: string, doc?: string) {
+  if (!doc) return false;
+  const n = await prisma.assinatura.count({
+    where: { docPagador: doc, trialDias: { gt: 0 }, mpPreapprovalId: { not: null }, userId: { not: userId } },
+  });
+  return n > 0;
 }
 
 /** Usado na tela para exibir (ou não) a oferta de teste grátis. */
@@ -60,62 +61,81 @@ export async function criarContaAssinante(
   }
 }
 
-export type InicioPagamento = { tipo: "PIX"; pagamentoId: string } | { tipo: "CARTAO"; initPoint: string };
+const descricaoPlano = (plano: keyof typeof PLANOS) => `Régua do Híbrido — Plano ${PLANOS[plano].nome}`;
+const NAO_CONFIGURADO = "Pagamentos ainda não foram configurados. Fale com o suporte.";
 
-export async function iniciarPagamento(payload: unknown): Promise<ActionResult<InicioPagamento>> {
+/** Gera (ou reaproveita) um Pix do plano escolhido. */
+export async function iniciarPix(payload: unknown): Promise<ActionResult<{ pagamentoId: string }>> {
   try {
     const user = await requireUser();
-    const parsed = checkoutSchema.safeParse(payload);
+    const parsed = pixSchema.safeParse(payload);
     if (!parsed.success) return zodFail(parsed.error);
-    const { plano, metodo } = parsed.data;
+    const { plano } = parsed.data;
+    if (!MP.mpConfigurado()) return { ok: false, error: NAO_CONFIGURADO };
 
-    if (!MP.mpConfigurado()) {
-      return { ok: false, error: "Pagamentos ainda não foram configurados. Fale com o suporte." };
-    }
+    const valor = precoPlano(plano, "PIX");
+    const descricao = descricaoPlano(plano);
 
-    const valor = precoPlano(plano, metodo);
-    const descricao = `Régua do Híbrido — Plano ${PLANOS[plano].nome}`;
+    // Reaproveita um QR Code ainda válido do mesmo plano (evita gerar cobranças repetidas)
+    const aberto = await prisma.pagamento.findFirst({
+      where: { userId: user.id, metodo: "PIX", plano, status: "PENDENTE", pixExpiraEm: { gt: new Date(Date.now() + 5 * 60_000) } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (aberto?.pixQrCode) return { ok: true, data: { pagamentoId: aberto.id } };
 
-    if (metodo === "PIX") {
-      // Reaproveita um QR Code ainda válido do mesmo plano (evita gerar cobranças repetidas)
-      const aberto = await prisma.pagamento.findFirst({
-        where: { userId: user.id, metodo: "PIX", plano, status: "PENDENTE", pixExpiraEm: { gt: new Date(Date.now() + 5 * 60_000) } },
-        orderBy: { createdAt: "desc" },
+    const expiraEm = new Date(Date.now() + PIX_VALIDADE_MIN * 60_000);
+    const pag = await prisma.pagamento.create({
+      data: { userId: user.id, plano, metodo: "PIX", valor, pixExpiraEm: expiraEm },
+    });
+    try {
+      const mp = await MP.criarPagamentoPix({
+        pagamentoId: pag.id,
+        valor,
+        descricao,
+        email: user.email,
+        nome: user.nome,
+        expiraEm,
       });
-      if (aberto?.pixQrCode) return { ok: true, data: { tipo: "PIX", pagamentoId: aberto.id } };
-
-      const expiraEm = new Date(Date.now() + PIX_VALIDADE_MIN * 60_000);
-      const pag = await prisma.pagamento.create({
-        data: { userId: user.id, plano, metodo: "PIX", valor, pixExpiraEm: expiraEm },
+      const td = mp.point_of_interaction?.transaction_data;
+      if (!td?.qr_code) throw new Error("Resposta do Mercado Pago sem QR Code");
+      await prisma.pagamento.update({
+        where: { id: pag.id },
+        data: { mpPaymentId: String(mp.id), pixQrCode: td.qr_code, pixQrBase64: td.qr_code_base64 ?? null },
       });
-      try {
-        const mp = await MP.criarPagamentoPix({
-          pagamentoId: pag.id,
-          valor,
-          descricao,
-          email: user.email,
-          nome: user.nome,
-          expiraEm,
-        });
-        const td = mp.point_of_interaction?.transaction_data;
-        if (!td?.qr_code) throw new Error("Resposta do Mercado Pago sem QR Code");
-        await prisma.pagamento.update({
-          where: { id: pag.id },
-          data: { mpPaymentId: String(mp.id), pixQrCode: td.qr_code, pixQrBase64: td.qr_code_base64 ?? null },
-        });
-      } catch (e) {
-        await prisma.pagamento.update({ where: { id: pag.id }, data: { status: "CANCELADO" } });
-        console.error("[billing] criar pix", e);
-        return {
-          ok: false,
-          error: "Não foi possível gerar o Pix agora. Verifique se a conta Mercado Pago tem chave Pix cadastrada e tente novamente.",
-        };
-      }
-      revalidatePath("/painel/assinatura");
-      return { ok: true, data: { tipo: "PIX", pagamentoId: pag.id } };
+    } catch (e) {
+      await prisma.pagamento.update({ where: { id: pag.id }, data: { status: "CANCELADO" } });
+      console.error("[billing] criar pix", e);
+      return {
+        ok: false,
+        error: "Não foi possível gerar o Pix agora. Verifique se a conta Mercado Pago tem chave Pix cadastrada e tente novamente.",
+      };
     }
+    revalidatePath("/painel/assinatura");
+    return { ok: true, data: { pagamentoId: pag.id } };
+  } catch (e) {
+    return handleActionError(e);
+  }
+}
 
-    // ---- Cartão recorrente ----
+export type ResultadoCartao =
+  | { status: "ATIVA" | "PENDENTE"; trial: boolean }
+  | { status: "TRIAL_JA_USADO" };
+
+/**
+ * Assinatura no cartão com o token gerado pelo formulário embutido (Card Payment Brick).
+ * O número do cartão nunca passa pelo nosso servidor — só o token de uso único.
+ */
+export async function assinarComCartao(payload: unknown): Promise<ActionResult<ResultadoCartao>> {
+  try {
+    const user = await requireUser();
+    const parsed = cartaoSchema.safeParse(payload);
+    if (!parsed.success) return zodFail(parsed.error);
+    const { plano, cardToken, docNumero, aceitarSemTrial } = parsed.data;
+    if (!MP.mpConfigurado()) return { ok: false, error: NAO_CONFIGURADO };
+
+    const valor = precoPlano(plano, "CARTAO");
+    const descricao = descricaoPlano(plano);
+
     const ativa = await prisma.assinatura.findFirst({ where: { userId: user.id, status: { in: ["ATIVA", "PAUSADA"] } } });
     if (ativa) {
       return { ok: false, error: "Você já tem uma assinatura no cartão. Cancele-a antes de trocar de plano." };
@@ -128,28 +148,44 @@ export async function iniciarPagamento(payload: unknown): Promise<ActionResult<I
       await prisma.assinatura.update({ where: { id: p.id }, data: { status: "CANCELADA" } });
     }
 
-    const emailPagador = parsed.data.emailPagador || user.email;
-    const trialDias = (await trialDisponivel(user.id, emailPagador)) ? TRIAL_DIAS : 0;
+    let trialDias = (await trialDisponivel(user.id)) ? TRIAL_DIAS : 0;
+    if (trialDias && (await documentoJaUsouTrial(user.id, docNumero))) {
+      // Mesmo titular já testou em outra conta: só segue com cobrança imediata se o cliente aceitar
+      if (!aceitarSemTrial) return { ok: true, data: { status: "TRIAL_JA_USADO" } };
+      trialDias = 0;
+    }
+
     const assinatura = await prisma.assinatura.create({
-      data: { userId: user.id, plano, valor, emailPagador, trialDias },
+      data: { userId: user.id, plano, valor, emailPagador: user.email, docPagador: docNumero ?? null, trialDias },
     });
+
+    let pre: MP.MpPreapproval;
     try {
-      const pre = await MP.criarAssinaturaCartao({
+      pre = await MP.criarAssinaturaCartao({
         assinaturaId: assinatura.id,
         valor,
         meses: PLANOS[plano].mesesCartao,
         descricao: trialDias ? `${descricao} (${trialDias} dias grátis)` : descricao,
-        emailPagador,
+        emailPagador: user.email,
+        cardTokenId: cardToken,
         trialDias,
       });
-      if (!pre.init_point) throw new Error("Resposta do Mercado Pago sem init_point");
-      await prisma.assinatura.update({ where: { id: assinatura.id }, data: { mpPreapprovalId: pre.id } });
-      return { ok: true, data: { tipo: "CARTAO", initPoint: pre.init_point } };
     } catch (e) {
       await prisma.assinatura.update({ where: { id: assinatura.id }, data: { status: "CANCELADA" } });
-      console.error("[billing] criar assinatura", e);
-      return { ok: false, error: "Não foi possível iniciar a assinatura no cartão. Tente novamente em instantes." };
+      console.error("[billing] criar assinatura cartão", e);
+      return { ok: false, error: MP.mensagemErroCartao(e) };
     }
+
+    await prisma.assinatura.update({ where: { id: assinatura.id }, data: { mpPreapprovalId: pre.id } });
+    // Aplica o status (libera o teste grátis ou registra a 1ª cobrança se já processada)
+    await sincronizarPreapproval(pre.id).catch((e) => console.error("[billing] sync pós-assinatura", e));
+
+    const atual = await prisma.assinatura.findUniqueOrThrow({ where: { id: assinatura.id } });
+    revalidatePath("/painel/assinatura");
+    return {
+      ok: true,
+      data: { status: atual.status === "ATIVA" ? "ATIVA" : "PENDENTE", trial: trialDias > 0 },
+    };
   } catch (e) {
     return handleActionError(e);
   }

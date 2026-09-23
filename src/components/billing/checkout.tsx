@@ -3,7 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, CheckCircle2, Copy, CreditCard, Loader2, QrCode, RefreshCw } from "lucide-react";
-import { consultarPix, iniciarPagamento, type PixInfo } from "@/actions/billing";
+import { assinarComCartao, consultarPix, iniciarPix, type PixInfo } from "@/actions/billing";
+import { CardBrick, type DadosCartao } from "./card-brick";
 import { PLANOS, TRIAL_DIAS, type MetodoTipo, type PlanoTipo } from "@/lib/billing/planos";
 import { formatBRL, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ export function Checkout({
   pixPendenteId,
   cartaoAtivo,
   trialDisponivel,
+  mpPublicKey,
 }: {
   planoInicial: PlanoTipo;
   metodoInicial: MetodoTipo;
@@ -26,32 +28,87 @@ export function Checkout({
   pixPendenteId?: string;
   cartaoAtivo: boolean;
   trialDisponivel: boolean;
+  mpPublicKey: string | null;
 }) {
   const [plano, setPlano] = useState<PlanoTipo>(planoInicial);
   const [metodo, setMetodo] = useState<MetodoTipo>(cartaoAtivo ? "PIX" : metodoInicial);
-  const [emailPagador, setEmailPagador] = useState(emailUsuario);
   const [pixId, setPixId] = useState<string | undefined>(pixPendenteId);
   const [erro, setErro] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  // Recria o formulário do cartão após recusa (o token do cartão é de uso único)
+  const [brickKey, setBrickKey] = useState(0);
+  const [confirmarSemTrial, setConfirmarSemTrial] = useState<DadosCartao | null>(null);
+  const [assinando, setAssinando] = useState(false);
 
-  function pagar() {
+  function gerarPix() {
     setErro(null);
     start(async () => {
-      const res = await iniciarPagamento({
-        plano,
-        metodo,
-        emailPagador: metodo === "CARTAO" ? emailPagador : undefined,
-      });
+      const res = await iniciarPix({ plano });
       if (!res.ok) return setErro(res.error);
-      if (res.data?.tipo === "PIX") setPixId(res.data.pagamentoId);
-      if (res.data?.tipo === "CARTAO") window.location.href = res.data.initPoint;
+      setPixId(res.data!.pagamentoId);
     });
+  }
+
+  async function enviarCartao(dados: DadosCartao, aceitarSemTrial = false) {
+    setErro(null);
+    setAssinando(true);
+    const res = await assinarComCartao({ plano, cardToken: dados.token, docTipo: dados.docTipo, docNumero: dados.docNumero, aceitarSemTrial });
+    if (res.ok && res.data?.status === "TRIAL_JA_USADO") {
+      setAssinando(false);
+      setConfirmarSemTrial(dados);
+      return;
+    }
+    if (!res.ok) {
+      setAssinando(false);
+      setErro(res.error);
+      setBrickKey((k) => k + 1);
+      return;
+    }
+    // Recarrega a página de assinatura com o novo status (e aguarda a 1ª cobrança, se houver)
+    window.location.href = "/painel/assinatura?retorno=cartao";
   }
 
   if (pixId) return <PixPanel id={pixId} onNovo={() => setPixId(undefined)} />;
 
-  const mensalCartaoAno = PLANOS.MENSAL.precos[metodo] * 12;
-  const economiaAnual = mensalCartaoAno - PLANOS.ANUAL.precos[metodo];
+  if (assinando) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-12 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="font-medium">Confirmando seu cartão com o Mercado Pago…</p>
+      </div>
+    );
+  }
+
+  if (confirmarSemTrial) {
+    return (
+      <div className="grid gap-4 rounded-lg border border-amber-300 bg-amber-50 p-5 text-sm">
+        <p className="font-semibold text-amber-900">Este CPF já utilizou o teste grátis.</p>
+        <p className="text-amber-900">
+          Você pode assinar agora com cobrança imediata de {formatBRL(PLANOS[plano].precos.CARTAO)} no cartão informado.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="accent" onClick={() => enviarCartao(confirmarSemTrial, true)}>
+            <CreditCard /> Assinar com cobrança imediata
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setConfirmarSemTrial(null);
+              setBrickKey((k) => k + 1);
+            }}
+          >
+            Voltar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const mensalAno = PLANOS.MENSAL.precos[metodo] * 12;
+  const economiaAnual = mensalAno - PLANOS.ANUAL.precos[metodo];
+  const textoBotaoCartao = trialDisponivel
+    ? `Começar teste grátis de ${TRIAL_DIAS} dias`
+    : `Assinar por ${formatBRL(PLANOS[plano].precos.CARTAO)}/${plano === "MENSAL" ? "mês" : "ano"}`;
 
   return (
     <div className="grid gap-6">
@@ -118,39 +175,39 @@ export function Checkout({
         </div>
       </div>
 
-      {metodo === "CARTAO" && trialDisponivel && (
-        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-          <strong>Teste grátis por {TRIAL_DIAS} dias.</strong> Cadastre o cartão agora e use tudo liberado. A primeira
-          cobrança de {formatBRL(PLANOS[plano].precos.CARTAO)} só acontece depois do teste — cancele antes e não paga nada.
+      {erro && <p className="rounded-md bg-red-50 p-3 text-sm text-destructive">{erro}</p>}
+
+      {metodo === "CARTAO" ? (
+        <div className="grid gap-4">
+          {trialDisponivel && (
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+              <strong>Teste grátis por {TRIAL_DIAS} dias.</strong> Cadastre o cartão e use tudo liberado. A primeira
+              cobrança de {formatBRL(PLANOS[plano].precos.CARTAO)} só acontece depois do teste — cancele antes e não paga
+              nada.
+            </div>
+          )}
+          {mpPublicKey ? (
+            <CardBrick
+              key={`${plano}-${brickKey}`}
+              publicKey={mpPublicKey}
+              valor={PLANOS[plano].precos.CARTAO}
+              email={emailUsuario}
+              textoBotao={textoBotaoCartao}
+              onSubmit={enviarCartao}
+            />
+          ) : (
+            <p className="text-sm text-destructive">Pagamento com cartão indisponível no momento. Use o Pix.</p>
+          )}
         </div>
+      ) : (
+        <>
+          <Button size="lg" variant="accent" onClick={gerarPix} disabled={pending}>
+            {pending ? <Loader2 className="animate-spin" /> : <QrCode />}
+            Gerar Pix de {formatBRL(PLANOS[plano].precos.PIX)}
+          </Button>
+          <p className="text-center text-xs text-muted-foreground">Pagamento processado pelo Mercado Pago.</p>
+        </>
       )}
-
-      {metodo === "CARTAO" && (
-        <div className="grid gap-2">
-          <Label htmlFor="emailPagador">E-mail da sua conta Mercado Pago</Label>
-          <Input
-            id="emailPagador"
-            type="email"
-            value={emailPagador}
-            onChange={(e) => setEmailPagador(e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            A assinatura no cartão é concluída no ambiente seguro do Mercado Pago. Use o e-mail com que você entra lá.
-          </p>
-        </div>
-      )}
-
-      {erro && <p className="text-sm text-destructive">{erro}</p>}
-
-      <Button size="lg" variant="accent" onClick={pagar} disabled={pending}>
-        {pending ? <Loader2 className="animate-spin" /> : metodo === "PIX" ? <QrCode /> : <CreditCard />}
-        {metodo === "PIX"
-          ? `Gerar Pix de ${formatBRL(PLANOS[plano].precos.PIX)}`
-          : trialDisponivel
-            ? `Começar teste grátis de ${TRIAL_DIAS} dias`
-            : `Assinar por ${formatBRL(PLANOS[plano].precos.CARTAO)}/${plano === "MENSAL" ? "mês" : "ano"}`}
-      </Button>
-      <p className="text-center text-xs text-muted-foreground">Pagamento processado pelo Mercado Pago.</p>
     </div>
   );
 }

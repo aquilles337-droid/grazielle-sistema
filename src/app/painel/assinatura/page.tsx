@@ -167,6 +167,7 @@ export default async function AssinaturaPage({
             pixPendenteId={pixPendente?.id}
             cartaoAtivo={cartaoAtivo}
             trialDisponivel={trialDisponivel}
+            mpPublicKey={process.env.MP_PUBLIC_KEY ?? null}
           />
         </CardContent>
       </Card>

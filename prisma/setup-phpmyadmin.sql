@@ -1,7 +1,7 @@
 -- =====================================================================
 -- Régua do Híbrido — criação do banco via phpMyAdmin
 --
--- INSTALAÇÃO NOVA (banco vazio). Se o banco já existe, use update-002-assinaturas.sql.
+-- INSTALAÇÃO NOVA (banco vazio). Se o banco já existe, use os arquivos update-00X na ordem.
 --
 -- Como usar: phpMyAdmin → selecione o banco (u123456789_...) na lateral
 -- → aba "SQL" → cole TODO este arquivo → "Executar".
@@ -73,6 +73,7 @@ CREATE TABLE `assinaturas` (
     `status` ENUM('PENDENTE', 'ATIVA', 'PAUSADA', 'CANCELADA') NOT NULL DEFAULT 'PENDENTE',
     `mpPreapprovalId` VARCHAR(64) NULL,
     `emailPagador` VARCHAR(191) NULL,
+    `docPagador` VARCHAR(20) NULL,
     `trialDias` INTEGER NOT NULL DEFAULT 0,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -80,6 +81,7 @@ CREATE TABLE `assinaturas` (
     UNIQUE INDEX `assinaturas_mpPreapprovalId_key`(`mpPreapprovalId`),
     INDEX `assinaturas_userId_status_idx`(`userId`, `status`),
     INDEX `assinaturas_emailPagador_idx`(`emailPagador`),
+    INDEX `assinaturas_docPagador_idx`(`docPagador`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
