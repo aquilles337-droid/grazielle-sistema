@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    color-scheme: only light;
     /* Paleta da Logon Contabilidade: grafite + petróleo (#066782) sobre branco-gelo */
     --background: 210 60% 99%;
     --foreground: 0 0% 11%;
