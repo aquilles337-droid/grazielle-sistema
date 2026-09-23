@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PREMISSAS_PADRAO, aliquotaEfetiva, calcularVeredito, simular, type DadosEmpresa } from "./motor";
+import { PREMISSAS_PADRAO, aliquotaEfetiva, calcularVeredito, regimePorReducao, simular, type DadosEmpresa } from "./motor";
 import { faixaPorRbt12 } from "./tabelas-simples";
 
 const base: DadosEmpresa = {
@@ -104,5 +104,46 @@ describe("faixaPorRbt12", () => {
     expect(faixaPorRbt12(180_000)).toBe(1);
     expect(faixaPorRbt12(180_000.01)).toBe(2);
     expect(faixaPorRbt12(4_000_000)).toBe(6);
+  });
+});
+
+describe("regime de alíquota e reduções", () => {
+  it("redução na saída reduz o débito e o crédito transferido ao cliente", () => {
+    const r = simular({ empresa: { ...base, regimeSaida: "REDUCAO_60", reducaoSaida: 0.6 }, premissas: PREMISSAS_PADRAO });
+    expect(r.ivaSaida).toBeCloseTo(0.265 * 0.4, 10); // 10,6%
+    expect(r.ivaDeb).toBeCloseTo(50_000 * 0.106, 6);
+    expect(r.credHib).toBeCloseTo(50_000 * 0.106, 6);
+  });
+
+  it("redução nas compras reduz o crédito das entradas", () => {
+    const r = simular({ empresa: { ...base, reducaoCompras: 0.55 }, premissas: PREMISSAS_PADRAO });
+    expect(r.ivaCompra).toBeCloseTo(0.265 * 0.45, 10);
+    expect(r.ivaCred).toBeCloseTo(30_000 * 0.265 * 0.45, 6);
+  });
+
+  it("alíquota zero na saída: sem débito nem crédito ao cliente no Híbrido", () => {
+    const r = simular({ empresa: { ...base, regimeSaida: "ALIQUOTA_ZERO", reducaoSaida: 1 }, premissas: PREMISSAS_PADRAO });
+    expect(r.ivaDeb).toBe(0);
+    expect(r.credHib).toBe(0);
+  });
+
+  it("as reduções mudam o resultado e podem mudar o veredito", () => {
+    const cheio = simular({ empresa: base, premissas: PREMISSAS_PADRAO });
+    // Vende com redução de 60%, mas compra com alíquota cheia: débito cai mais que o crédito
+    const r60 = simular({ empresa: { ...base, reducaoSaida: 0.6 }, premissas: PREMISSAS_PADRAO });
+    expect(r60.custoHib).toBeLessThan(cheio.custoHib);
+    expect(r60.ganhoCliente).toBeLessThan(cheio.ganhoCliente);
+    // Vende com alíquota cheia, mas as compras vêm com alíquota zero: sem crédito na entrada
+    const semCredito = simular({ empresa: { ...base, pctB2B: 0.3, reducaoCompras: 1 }, premissas: PREMISSAS_PADRAO });
+    expect(semCredito.ivaCred).toBe(0);
+    expect(semCredito.veredito).toBe("MANTER");
+  });
+
+  it("identifica o regime pela redução", () => {
+    expect(regimePorReducao(0)).toBe("PADRAO");
+    expect(regimePorReducao(0.3)).toBe("REDUCAO_30");
+    expect(regimePorReducao(0.6)).toBe("REDUCAO_60");
+    expect(regimePorReducao(1)).toBe("ALIQUOTA_ZERO");
+    expect(regimePorReducao(0.55)).toBe("PERSONALIZADO");
   });
 });

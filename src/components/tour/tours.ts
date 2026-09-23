@@ -107,7 +107,14 @@ export const TOURS: Record<TourId, TourStep[]> = {
       alvo: "sim-percentuais",
       titulo: "Perfil da operação",
       texto:
-        "<b>% Exportação</b>: parte da receita vendida ao exterior. <b>% B2B</b>: quanto da receita interna vai para empresas que aproveitam crédito. <b>% Compras creditáveis</b>: compras que geram crédito de IBS/CBS. <b>Reduções</b>: redução de alíquota na saída e nas compras (ex.: 60% para saúde e educação).",
+        "<b>% Exportação</b>: parte da receita vendida ao exterior. <b>% B2B</b>: quanto da receita interna vai para empresas que aproveitam crédito. <b>% Compras creditáveis</b>: compras que geram crédito de IBS/CBS.",
+      lado: "right",
+    },
+    {
+      alvo: "sim-reducoes",
+      titulo: "Regime de alíquota e reduções",
+      texto:
+        "Escolha o <b>regime de alíquota na saída</b> (padrão, redução de 30%, de 60% ou alíquota zero) e a <b>redução na saída</b> é preenchida sozinha — ou use <b>Personalizado</b> para um mix. A <b>redução nas compras</b> é a média que os fornecedores aplicam: compras com alíquota reduzida geram menos crédito.",
       lado: "right",
     },
     {

@@ -11,6 +11,46 @@
 import { type Anexo, type Faixa, getFaixa } from "./tabelas-simples";
 
 export type Horizonte = "2027" | "PLENO";
+
+/**
+ * Regime de alíquota na saída (LC 214/2025). Define a redução aplicada ao IBS/CBS
+ * nas vendas — e, portanto, o débito no Híbrido e o crédito que o cliente B2B recebe.
+ * "PERSONALIZADO" = redução média digitada (ex.: mix de produtos com regimes diferentes).
+ */
+export type RegimeSaida = "PADRAO" | "REDUCAO_30" | "REDUCAO_60" | "ALIQUOTA_ZERO" | "PERSONALIZADO";
+
+export const REGIMES_SAIDA: Record<RegimeSaida, { label: string; descricao: string; reducao: number | null }> = {
+  PADRAO: { label: "Padrão — sem redução", descricao: "Alíquota cheia de IBS/CBS.", reducao: 0 },
+  REDUCAO_30: {
+    label: "Redução de 30%",
+    descricao: "Profissões intelectuais regulamentadas (advogados, contadores, engenheiros, arquitetos etc.).",
+    reducao: 0.3,
+  },
+  REDUCAO_60: {
+    label: "Redução de 60%",
+    descricao:
+      "Saúde, educação, dispositivos médicos e de acessibilidade, medicamentos, alimentos e higiene listados, insumos agropecuários, cultura e outros da lista legal.",
+    reducao: 0.6,
+  },
+  ALIQUOTA_ZERO: {
+    label: "Alíquota zero",
+    descricao: "Cesta Básica Nacional, hortifrúti, ovos, medicamentos e dispositivos específicos listados.",
+    reducao: 1,
+  },
+  PERSONALIZADO: {
+    label: "Personalizado (redução média)",
+    descricao: "Informe a redução média ponderada das vendas (ex.: parte cesta básica, parte alíquota cheia).",
+    reducao: null,
+  },
+};
+
+/** Identifica o regime a partir de uma redução já informada. */
+export function regimePorReducao(reducao: number): RegimeSaida {
+  const achado = (Object.keys(REGIMES_SAIDA) as RegimeSaida[]).find(
+    (k) => REGIMES_SAIDA[k].reducao !== null && Math.abs((REGIMES_SAIDA[k].reducao as number) - reducao) < 1e-9,
+  );
+  return achado ?? "PERSONALIZADO";
+}
 export type VereditoTipo = "OPTAR" | "LIMITROFE" | "NEGOCIAR" | "MANTER";
 
 export interface Premissas {
@@ -30,6 +70,8 @@ export interface DadosEmpresa {
   pctExportacao: number;
   pctB2B: number; // % B2B na receita interna
   pctComprasCreditaveis: number;
+  /** Regime de alíquota na saída (informativo; o cálculo usa reducaoSaida). */
+  regimeSaida?: RegimeSaida;
   reducaoSaida: number;
   reducaoCompras: number;
 }
@@ -206,7 +248,7 @@ export const VEREDITO_INFO: Record<VereditoTipo, { titulo: string; descricao: st
   },
   NEGOCIAR: {
     titulo: "Negociar repasse",
-    descricao: "O híbrido só compensa se o cliente B2B repassar parte do crédito — o repasse mínimo é viável (≤ 100%).",
+    descricao: "O híbrido só compensa se o cliente B2B repassar parte do crédito — o repasse mínimo é viável (até 100%).",
   },
   MANTER: {
     titulo: "Manter no Simples puro",

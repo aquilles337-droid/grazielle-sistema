@@ -1,5 +1,5 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { VEREDITO_INFO, type SimulationInput, type SimulationResult, type VereditoTipo } from "@/lib/calc/motor";
+import { REGIMES_SAIDA, VEREDITO_INFO, regimePorReducao, type SimulationInput, type SimulationResult, type VereditoTipo } from "@/lib/calc/motor";
 import { ANEXOS } from "@/lib/calc/tabelas-simples";
 import { formatBRL, formatCNPJ, formatDate, formatPct } from "@/lib/format";
 
@@ -199,6 +199,7 @@ export function SimulationReport({ escritorio, contador, crc, empresa, titulo, d
                   ["% Exportação", formatPct(e.pctExportacao)],
                   ["% B2B (receita interna)", formatPct(e.pctB2B)],
                   ["% Compras creditáveis", formatPct(e.pctComprasCreditaveis)],
+                  ["Regime na saída", REGIMES_SAIDA[e.regimeSaida ?? regimePorReducao(e.reducaoSaida)].label],
                   ["Redução na saída", formatPct(e.reducaoSaida)],
                   ["Redução nas compras", formatPct(e.reducaoCompras)],
                 ]}

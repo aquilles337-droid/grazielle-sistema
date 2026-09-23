@@ -7,9 +7,12 @@ import { Loader2, RotateCcw, Save } from "lucide-react";
 import { saveSimulation } from "@/actions/simulations";
 import {
   PREMISSAS_PADRAO,
+  REGIMES_SAIDA,
+  regimePorReducao,
   simular,
   VEREDITO_INFO,
   type Horizonte,
+  type RegimeSaida,
   type SimulationInput,
   type SimulationResult,
   type VereditoTipo,
@@ -33,6 +36,7 @@ type FormState = {
   pctExportacao: string;
   pctB2B: string;
   pctComprasCreditaveis: string;
+  regimeSaida: RegimeSaida;
   reducaoSaida: string;
   reducaoCompras: string;
   cbsReferencia: string;
@@ -61,6 +65,7 @@ function toForm(input?: SimulationInput): FormState {
     pctExportacao: e ? pct(e.pctExportacao) : "0",
     pctB2B: e ? pct(e.pctB2B) : "50",
     pctComprasCreditaveis: e ? pct(e.pctComprasCreditaveis) : "40",
+    regimeSaida: e ? (e.regimeSaida ?? regimePorReducao(e.reducaoSaida)) : "PADRAO",
     reducaoSaida: e ? pct(e.reducaoSaida) : "0",
     reducaoCompras: e ? pct(e.reducaoCompras) : "0",
     cbsReferencia: pct(p.cbsReferencia),
@@ -82,6 +87,7 @@ function toInput(f: FormState): SimulationInput {
       pctExportacao: Math.min(frac(f.pctExportacao), 1),
       pctB2B: Math.min(frac(f.pctB2B), 1),
       pctComprasCreditaveis: Math.min(frac(f.pctComprasCreditaveis), 5),
+      regimeSaida: f.regimeSaida,
       reducaoSaida: Math.min(frac(f.reducaoSaida), 1),
       reducaoCompras: Math.min(frac(f.reducaoCompras), 1),
     },
@@ -139,6 +145,19 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
       const n = num(v);
       return { ...f, rbt12: v, faixa: n > 0 ? faixaPorRbt12(n) : f.faixa };
     });
+  };
+
+  // Regime de alíquota na saída: preenche a redução correspondente (exceto personalizado)
+  const onRegime = (regime: RegimeSaida) => {
+    setFeedback(null);
+    const r = REGIMES_SAIDA[regime].reducao;
+    setForm((f) => ({ ...f, regimeSaida: regime, reducaoSaida: r === null ? f.reducaoSaida : pct(r) }));
+  };
+
+  // Redução digitada à mão: identifica o regime (ou marca como personalizado)
+  const onReducaoSaida = (v: string) => {
+    setFeedback(null);
+    setForm((f) => ({ ...f, reducaoSaida: v, regimeSaida: regimePorReducao(Math.min(frac(v), 1)) }));
   };
 
   function onSave() {
@@ -212,8 +231,28 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
                 max={500}
                 onChange={(v) => set("pctComprasCreditaveis", v)}
               />
-              <PctField label="Redução na saída" value={form.reducaoSaida} onChange={(v) => set("reducaoSaida", v)} />
-              <PctField label="Redução nas compras" value={form.reducaoCompras} onChange={(v) => set("reducaoCompras", v)} />
+            </div>
+
+            <div data-tour="sim-reducoes" className="grid gap-3 rounded-md border border-dashed border-accent/30 bg-accent/[0.03] p-3">
+              <Field label="Regime de alíquota na saída">
+                <NativeSelect value={form.regimeSaida} onChange={(e) => onRegime(e.target.value as RegimeSaida)}>
+                  {(Object.keys(REGIMES_SAIDA) as RegimeSaida[]).map((k) => (
+                    <option key={k} value={k}>
+                      {REGIMES_SAIDA[k].label}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+              <p className="-mt-1 text-xs text-muted-foreground">{REGIMES_SAIDA[form.regimeSaida].descricao}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <PctField label="Redução na saída" value={form.reducaoSaida} onChange={onReducaoSaida} />
+                <PctField label="Redução nas compras" value={form.reducaoCompras} onChange={(v) => set("reducaoCompras", v)} />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                <b>Redução nas compras</b>: redução média que os fornecedores aplicam nas vendas para a empresa. Ex.: um
+                mercadinho que vende 55% de cesta básica normalmente também compra 55% com alíquota zero — essa parte da
+                entrada não gera crédito, então informe 55%.
+              </p>
             </div>
           </CardContent>
         </Card>

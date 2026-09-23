@@ -87,6 +87,7 @@ export const simulationInputSchema = z.object({
     pctExportacao: fracao(),
     pctB2B: fracao(),
     pctComprasCreditaveis: fracao(5), // compras podem superar a receita no mês
+    regimeSaida: z.enum(["PADRAO", "REDUCAO_30", "REDUCAO_60", "ALIQUOTA_ZERO", "PERSONALIZADO"]).optional(),
     reducaoSaida: fracao(),
     reducaoCompras: fracao(),
   }),
