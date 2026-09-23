@@ -39,6 +39,21 @@ Checks: `npm run typecheck` · `npm test` (motor de cálculo) · `npm run build`
 npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
 ```
 
+## Assinaturas (Mercado Pago)
+
+| Plano | Cartão (recorrente) | Pix |
+|---|---|---|
+| Mensal | R$ 23,90/mês | R$ 21,90 → 30 dias |
+| Anual | R$ 239,90/ano | R$ 219,90 → 365 dias |
+
+- **Cartão**: assinatura recorrente (`/preapproval`) concluída no checkout do Mercado Pago, com **3 dias grátis** na primeira assinatura (cartão cadastrado antes; 1 teste por conta e por e-mail do Mercado Pago). Acesso = mês/ano de calendário a cada cobrança aprovada, com 3 dias de carência para retentativas.
+- **Pix**: QR Code gerado na tela, liberação automática; os dias se somam em renovações antecipadas. Aviso de renovação 5 dias antes do vencimento.
+- Preços e prazos: `src/lib/billing/planos.ts`. Fluxo: `/#planos` → `/assinar` (cadastro) → `/painel/assinatura` (pagamento).
+- O acesso é liberado pelo webhook **e** pela sincronização ao abrir a tela de assinatura (não depende só do webhook). O ADMIN sempre tem acesso e pode liberar dias manualmente em `/admin`.
+- Variáveis: `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `APP_URL` (ver `.env.example`).
+- Webhook: `https://SEU-DOMINIO/api/webhooks/mercadopago`, eventos **Pagamentos**, **Planos e assinaturas** (assinatura e pagamento recorrente).
+- Banco existente: rode `prisma/update-002-assinaturas.sql` no phpMyAdmin.
+
 ## Deploy na Hostinger
 
 1. No hPanel, crie o banco MySQL e libere **MySQL remoto** para o IP do servidor da aplicação (se o app não rodar na mesma hospedagem).

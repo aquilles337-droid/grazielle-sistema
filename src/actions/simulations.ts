@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireActiveUser as requireUser } from "@/lib/auth";
 import { simular, type SimulationInput, type SimulationResult } from "@/lib/calc/motor";
 import { saveSimulationSchema, type ActionResult } from "@/lib/validators";
 import { handleActionError, zodFail } from "./_helpers";

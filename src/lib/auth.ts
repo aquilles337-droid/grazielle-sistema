@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validators";
+import { temAcesso } from "@/lib/billing/planos";
 
 const DUMMY_HASH = "$2b$12$5n.AWglVbqqXmqNv0JtK.uIImgZa3m8t7uNLB8vvS/lBkqbIbzsIG";
 
@@ -60,9 +61,40 @@ export async function requireUser() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, role: true, ativo: true, nome: true, email: true, escritorio: true, crc: true },
+    select: {
+      id: true,
+      role: true,
+      ativo: true,
+      nome: true,
+      email: true,
+      escritorio: true,
+      crc: true,
+      telefone: true,
+      acessoAte: true,
+    },
   });
   if (!user || !user.ativo) throw new AuthError("Acesso desativado.");
+  return user;
+}
+
+export class AccessError extends AuthError {}
+
+/** Usuário com assinatura em dia (ou ADMIN). Exigido para usar o simulador. */
+export async function requireActiveUser() {
+  const user = await requireUser();
+  if (user.role === "ADMIN") return user;
+  const cartaoAtivo = await prisma.assinatura.count({ where: { userId: user.id, status: "ATIVA" } });
+  if (!temAcesso(user, new Date(), cartaoAtivo > 0)) {
+    throw new AccessError("Sua assinatura não está ativa. Renove em Assinatura para continuar.");
+  }
+  return user;
+}
+
+/** Para páginas: sem assinatura em dia, redireciona para a tela de pagamento. */
+export async function garantirAcessoOuRedirecionar() {
+  const { redirect } = await import("next/navigation");
+  const user = await requireActiveUser().catch(() => null);
+  if (!user) redirect("/painel/assinatura?expirado=1");
   return user;
 }
 

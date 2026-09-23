@@ -22,6 +22,32 @@ enum Veredito {
   MANTER
 }
 
+enum Plano {
+  MENSAL
+  ANUAL
+}
+
+enum MetodoPagamento {
+  CARTAO
+  PIX
+}
+
+enum PagamentoStatus {
+  PENDENTE
+  APROVADO
+  RECUSADO
+  CANCELADO
+  EXPIRADO
+  ESTORNADO
+}
+
+enum AssinaturaStatus {
+  PENDENTE
+  ATIVA
+  PAUSADA
+  CANCELADA
+}
+
 enum LeadStatus {
   NOVO
   CONTATADO
@@ -39,10 +65,17 @@ model User {
   escritorio String?  @db.VarChar(160)
   crc        String?  @db.VarChar(30)
   ativo      Boolean  @default(true)
+  telefone   String?  @db.VarChar(20)
+  // Assinatura: acesso ao simulador liberado até esta data (ADMIN sempre tem acesso)
+  acessoAte  DateTime?
+  // Teste grátis já utilizado (só um por conta)
+  trialUsadoEm DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  companies Company[]
+  companies   Company[]
+  assinaturas Assinatura[]
+  pagamentos  Pagamento[]
 
   @@map("users")
 }
@@ -79,6 +112,57 @@ model Simulation {
 
   @@index([companyId, data])
   @@map("simulations")
+}
+
+// Assinatura recorrente no cartão (Mercado Pago "preapproval")
+model Assinatura {
+  id              String           @id @default(cuid())
+  userId          String
+  plano           Plano
+  valor           Decimal          @db.Decimal(10, 2)
+  status          AssinaturaStatus @default(PENDENTE)
+  mpPreapprovalId String?          @unique @db.VarChar(64)
+  // E-mail da conta Mercado Pago do pagador (também evita repetir o teste grátis)
+  emailPagador    String?          @db.VarChar(191)
+  // Dias de teste grátis antes da 1ª cobrança (0 = sem teste)
+  trialDias       Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pagamentos Pagamento[]
+
+  @@index([userId, status])
+  @@index([emailPagador])
+  @@map("assinaturas")
+}
+
+// Cada cobrança: Pix avulso (30/365 dias) ou parcela aprovada da assinatura no cartão
+model Pagamento {
+  id           String          @id @default(cuid())
+  userId       String
+  assinaturaId String?
+  plano        Plano
+  metodo       MetodoPagamento
+  valor        Decimal         @db.Decimal(10, 2)
+  status       PagamentoStatus @default(PENDENTE)
+  mpPaymentId  String?         @unique @db.VarChar(64)
+  pixQrCode    String?         @db.Text
+  pixQrBase64  String?         @db.MediumText
+  pixExpiraEm  DateTime?
+  aprovadoEm   DateTime?
+  // Período de acesso concedido por este pagamento
+  acessoDe     DateTime?
+  acessoAte    DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assinatura Assinatura? @relation(fields: [assinaturaId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([assinaturaId])
+  @@map("pagamentos")
 }
 
 model Lead {

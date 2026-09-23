@@ -33,6 +33,30 @@ export const accountantSchema = z.object({
   senha: z.string().min(8, "Mínimo de 8 caracteres").max(100),
   escritorio: z.string().trim().max(160).optional().transform((v) => v || undefined),
   crc: z.string().trim().toUpperCase().max(30).optional().transform((v) => v || undefined),
+  // Acesso de cortesia ao criar pelo admin (0 = só após pagamento)
+  diasAcesso: z.coerce.number().int().min(0).max(3660).default(0),
+});
+
+export const signupSchema = z
+  .object({
+    nome: z.string().trim().min(3, "Informe seu nome").max(120),
+    email: z.string().trim().toLowerCase().email("E-mail inválido").max(191),
+    telefone: z
+      .string()
+      .transform(onlyDigits)
+      .pipe(z.string().min(10, "Telefone inválido").max(13, "Telefone inválido")),
+    crc: z.string().trim().toUpperCase().min(4, "Informe seu CRC").max(30),
+    escritorio: z.string().trim().max(160).optional().transform((v) => v || undefined),
+    senha: z.string().min(8, "Mínimo de 8 caracteres").max(100),
+    confirmacao: z.string(),
+  })
+  .refine((d) => d.senha === d.confirmacao, { message: "As senhas não conferem", path: ["confirmacao"] });
+
+export const checkoutSchema = z.object({
+  plano: z.enum(["MENSAL", "ANUAL"]),
+  metodo: z.enum(["CARTAO", "PIX"]),
+  // E-mail da conta Mercado Pago do pagador (assinatura no cartão)
+  emailPagador: z.string().trim().toLowerCase().email("E-mail inválido").max(191).optional(),
 });
 
 export const changePasswordSchema = z

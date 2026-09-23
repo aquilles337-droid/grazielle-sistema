@@ -6,6 +6,7 @@ import { createAccountant } from "@/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/select";
 import { FieldError } from "@/components/shared/field-error";
 
 export function AccountantForm() {
@@ -43,6 +44,15 @@ export function AccountantForm() {
           <Label htmlFor="crc">CRC</Label>
           <Input id="crc" name="crc" />
         </div>
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="diasAcesso">Acesso inicial</Label>
+        <NativeSelect id="diasAcesso" name="diasAcesso" defaultValue="0">
+          <option value="0">Sem acesso — liberado ao pagar</option>
+          <option value="7">7 dias de teste</option>
+          <option value="30">30 dias (cortesia)</option>
+          <option value="365">365 dias (cortesia)</option>
+        </NativeSelect>
       </div>
       {state && !state.ok && !fe && <p className="text-sm text-destructive">{state.error}</p>}
       {state?.ok && <p className="text-sm text-accent">{state.message}</p>}

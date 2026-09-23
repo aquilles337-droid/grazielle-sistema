@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Building2, ChevronRight } from "lucide-react";
 import { listCompanies } from "@/actions/companies";
+import { garantirAcessoOuRedirecionar } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VereditoBadge } from "@/components/shared/veredito-badge";
@@ -8,6 +9,8 @@ import { CompanyForm } from "@/components/painel/company-form";
 import { formatCNPJ, formatDate } from "@/lib/format";
 
 export default async function PainelPage() {
+  // Layout e página renderizam em paralelo: checa aqui também antes de consultar
+  await garantirAcessoOuRedirecionar();
   const companies = await listCompanies();
 
   return (

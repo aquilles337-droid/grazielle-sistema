@@ -25,7 +25,10 @@ export function AppHeader({
             <Link href="/painel" className={area === "painel" ? "font-semibold" : "text-muted-foreground hover:text-foreground"}>
               Empresas
             </Link>
-            <Link href="/painel/conta" className="text-muted-foreground hover:text-foreground">
+            <Link href="/painel/assinatura" className="text-muted-foreground hover:text-foreground">
+              Assinatura
+            </Link>
+            <Link href="/painel/conta" className="hidden text-muted-foreground hover:text-foreground sm:inline">
               Minha conta
             </Link>
             {isAdmin && (

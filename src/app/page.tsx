@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LeadForm } from "@/components/landing/lead-form";
+import { Pricing } from "@/components/landing/pricing";
 import { VereditoBadge } from "@/components/shared/veredito-badge";
 import { PREMISSAS_PADRAO, simular } from "@/lib/calc/motor";
 import { formatBRL, formatPct } from "@/lib/format";
@@ -89,6 +90,9 @@ export default function LandingPage() {
             <Button variant="ghost" asChild className="hidden sm:inline-flex">
               <a href="#como-funciona">Como funciona</a>
             </Button>
+            <Button variant="ghost" asChild className="hidden sm:inline-flex">
+              <a href="#planos">Planos</a>
+            </Button>
             <Button variant="outline" asChild>
               <Link href="/login">Entrar</Link>
             </Button>
@@ -114,8 +118,8 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Button size="lg" variant="accent" asChild>
-                  <a href="#solicitar">
-                    Solicitar acesso / demonstração <ArrowRight />
+                  <a href="#planos">
+                    Assinar agora <ArrowRight />
                   </a>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
@@ -199,11 +203,13 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <Pricing />
+
         {/* CTA / Formulário */}
         <section id="solicitar" className="container scroll-mt-16 py-16 md:py-24">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div className="space-y-4">
-              <h2 className="text-3xl font-bold tracking-tight">Pronto para antecipar a conversa com seus clientes?</h2>
+              <h2 className="text-3xl font-bold tracking-tight">Prefere falar com a gente antes de assinar?</h2>
               <p className="text-muted-foreground">
                 Deixe seus dados e liberamos uma demonstração guiada. O acesso é exclusivo para contadores com CRC ativo.
               </p>

@@ -26,10 +26,40 @@ export async function listAccountants() {
       escritorio: true,
       crc: true,
       ativo: true,
+      acessoAte: true,
       createdAt: true,
       _count: { select: { companies: true } },
+      assinaturas: { where: { status: "ATIVA" }, select: { plano: true }, take: 1 },
     },
   });
+}
+
+export async function listPagamentos() {
+  await requireAdmin();
+  return prisma.pagamento.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    include: { user: { select: { nome: true, email: true } } },
+  });
+}
+
+/** Cortesia/ajuste manual: soma dias ao acesso (ou revoga com dias = 0). */
+export async function concederAcesso(userId: string, dias: number): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    if (!Number.isInteger(dias) || dias < 0 || dias > 3660) return { ok: false, error: "Quantidade de dias inválida." };
+    const u = await prisma.user.findFirst({ where: { id: userId, role: "ACCOUNTANT" }, select: { acessoAte: true } });
+    if (!u) return { ok: false, error: "Contador não encontrado." };
+
+    const agora = new Date();
+    const base = u.acessoAte && u.acessoAte > agora ? u.acessoAte : agora;
+    const acessoAte = dias === 0 ? agora : new Date(base.getTime() + dias * 24 * 60 * 60 * 1000);
+    await prisma.user.update({ where: { id: userId }, data: { acessoAte } });
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch (e) {
+    return handleActionError(e);
+  }
 }
 
 export async function listLeads() {
@@ -47,7 +77,15 @@ export async function createAccountant(_prev: ActionResult | null, formData: For
     if (exists) return { ok: false, error: "Já existe um usuário com este e-mail." };
 
     const senha = await bcrypt.hash(parsed.data.senha, 12);
-    await prisma.user.create({ data: { ...parsed.data, senha, role: "ACCOUNTANT" } });
+    const { diasAcesso, ...dados } = parsed.data;
+    await prisma.user.create({
+      data: {
+        ...dados,
+        senha,
+        role: "ACCOUNTANT",
+        acessoAte: diasAcesso > 0 ? new Date(Date.now() + diasAcesso * 24 * 60 * 60 * 1000) : null,
+      },
+    });
 
     revalidatePath("/admin");
     return { ok: true, message: `Acesso criado para ${parsed.data.email}.` };

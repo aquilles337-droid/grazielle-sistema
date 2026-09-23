@@ -1,5 +1,5 @@
 import { renderToBuffer } from "@react-pdf/renderer";
-import { AuthError, requireUser } from "@/lib/auth";
+import { AccessError, AuthError, requireActiveUser } from "@/lib/auth";
 import { getSimulation } from "@/actions/simulations";
 import { SimulationReport } from "@/components/pdf/simulation-report";
 
@@ -11,8 +11,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   let user;
   try {
-    user = await requireUser();
+    user = await requireActiveUser();
   } catch (e) {
+    if (e instanceof AccessError) return new Response("Assinatura inativa", { status: 402 });
     if (e instanceof AuthError) return new Response("Não autorizado", { status: 401 });
     throw e;
   }

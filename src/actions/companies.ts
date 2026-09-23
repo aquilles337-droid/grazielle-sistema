@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireActiveUser as requireUser } from "@/lib/auth";
 import { companySchema, type ActionResult } from "@/lib/validators";
 import { formToObject, handleActionError, zodFail } from "./_helpers";
 

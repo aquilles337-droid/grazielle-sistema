@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getCompany } from "@/actions/companies";
+import { garantirAcessoOuRedirecionar } from "@/lib/auth";
 import { getSimulation, listSimulations } from "@/actions/simulations";
 import { Simulator } from "@/components/painel/simulator";
 import { SimulationHistory } from "@/components/painel/simulation-history";
@@ -17,6 +18,7 @@ export default async function CompanyPage({
 }) {
   const { id } = await params;
   const { sim } = await searchParams;
+  await garantirAcessoOuRedirecionar();
 
   const company = await getCompany(id);
   if (!company) notFound();
