@@ -107,7 +107,7 @@ export const TOURS: Record<TourId, TourStep[]> = {
       alvo: "sim-percentuais",
       titulo: "Perfil da operação",
       texto:
-        "<b>% Exportação</b>: parte da receita vendida ao exterior. <b>% B2B</b>: quanto da receita interna vai para empresas que aproveitam crédito. <b>% Compras creditáveis</b>: compras que geram crédito de IBS/CBS.",
+        "<b>% Exportação</b>: parte da receita vendida ao exterior. <b>% B2B</b>: quanto da receita interna vai para empresas que aproveitam crédito. <b>% Compras creditáveis</b>: compras que geram crédito de IBS/CBS. <b>% Receita com ICMS-ST</b> (comércio e indústria): parte das vendas com ICMS já retido por substituição — o DAS sai sem o ICMS nessa parte.",
       lado: "right",
     },
     {

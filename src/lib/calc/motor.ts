@@ -74,6 +74,12 @@ export interface DadosEmpresa {
   regimeSaida?: RegimeSaida;
   reducaoSaida: number;
   reducaoCompras: number;
+  /**
+   * % da receita interna com ICMS já retido por substituição tributária (empresa
+   * substituída). Só Anexos I e II, e só enquanto existir ICMS (horizonte 2027):
+   * nessa parte da receita o DAS é calculado sem a parcela do ICMS (LC 123, art. 18, §4-A).
+   */
+  pctSubstituicaoTributaria?: number;
 }
 
 export interface SimulationInput {
@@ -97,6 +103,11 @@ export interface SimulationResult {
   recExp: number;
   recInt: number;
   comp: number;
+  /** Receita com ICMS-ST considerada e a redução que ela gera no DAS (igual nos dois cenários). */
+  recST: number;
+  reducaoDasST: number;
+  /** A ST foi aplicada? (Anexo I/II, horizonte 2027) */
+  stAplicada: boolean;
   // Cenário A — Simples puro
   dasExp: number;
   dasPuro: number;
@@ -174,12 +185,21 @@ export function simular({ empresa: e, premissas: p }: SimulationInput): Simulati
 
   // 5. Cenário A — Simples puro (exportação é imune à fatia CBS/IBS do DAS)
   const dasExp = recExp * aliqEf * (1 - shareTotal);
-  const dasPuro = recInt * aliqEf + dasExp;
+
+  // ICMS-ST: na receita com ICMS já retido, o DAS sai sem a parcela do ICMS (shareIBS
+  // nos Anexos I/II). Só em 2027 — no IVA pleno o ICMS foi extinto e a ST deixa de existir.
+  // O ICMS continua no DAS nos dois cenários em 2027, então a redução é igual em ambos.
+  const stAplicada =
+    p.horizonte === "2027" && (e.anexo === "I" || e.anexo === "II") && (e.pctSubstituicaoTributaria ?? 0) > 0;
+  const recST = stAplicada ? recInt * (e.pctSubstituicaoTributaria ?? 0) : 0;
+  const reducaoDasST = recST * aliqEf * shareIBS;
+
+  const dasPuro = recInt * aliqEf - reducaoDasST + dasExp;
   const credPuro = recInt * aliqEf * shareSai;
   const custoPuro = dasPuro;
 
   // 6. Cenário B — Híbrido
-  const dasHib = recInt * aliqEf * (1 - shareSai) + dasExp;
+  const dasHib = recInt * aliqEf * (1 - shareSai) - reducaoDasST + dasExp;
   const ivaDeb = recInt * ivaSaida;
   const ivaCred = comp * ivaCompra;
   const bruto = ivaDeb - ivaCred;
@@ -214,6 +234,9 @@ export function simular({ empresa: e, premissas: p }: SimulationInput): Simulati
     recExp,
     recInt,
     comp,
+    recST,
+    reducaoDasST,
+    stAplicada,
     dasExp,
     dasPuro,
     credPuro,

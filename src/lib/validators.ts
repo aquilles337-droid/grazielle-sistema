@@ -95,6 +95,7 @@ export const simulationInputSchema = z.object({
     regimeSaida: z.enum(["PADRAO", "REDUCAO_30", "REDUCAO_60", "ALIQUOTA_ZERO", "PERSONALIZADO"]).optional(),
     reducaoSaida: fracao(),
     reducaoCompras: fracao(),
+    pctSubstituicaoTributaria: fracao().optional(),
   }),
   premissas: z.object({
     cbsReferencia: fracao(),

@@ -63,7 +63,7 @@ const s = StyleSheet.create({
   },
   twoCols: { flexDirection: "row", gap: 16, marginBottom: 12 },
   col: { flex: 1 },
-  tr: { flexDirection: "row", paddingVertical: 3.5, paddingHorizontal: 4, borderBottomWidth: 0.5, borderBottomColor: C.border },
+  tr: { flexDirection: "row", paddingVertical: 3, paddingHorizontal: 4, borderBottomWidth: 0.5, borderBottomColor: C.border },
   trTotal: { flexDirection: "row", paddingVertical: 4, paddingHorizontal: 4, backgroundColor: C.zebra, fontFamily: "Helvetica-Bold" },
   tdLabel: { flex: 1, color: C.muted },
   tdValue: { textAlign: "right" },
@@ -214,6 +214,9 @@ export function SimulationReport({ escritorio, logo, contador, crc, empresa, tit
                   ["% Exportação", formatPct(e.pctExportacao)],
                   ["% B2B (receita interna)", formatPct(e.pctB2B)],
                   ["% Compras creditáveis", formatPct(e.pctComprasCreditaveis)],
+                  ...(r.stAplicada
+                    ? ([["% Receita com ICMS-ST", formatPct(e.pctSubstituicaoTributaria ?? 0)]] as [string, string][])
+                    : []),
                   ["Regime na saída", REGIMES_SAIDA[e.regimeSaida ?? regimePorReducao(e.reducaoSaida)].label],
                   ["Redução na saída", formatPct(e.reducaoSaida)],
                   ["Redução nas compras", formatPct(e.reducaoCompras)],
@@ -244,6 +247,9 @@ export function SimulationReport({ escritorio, logo, contador, crc, empresa, tit
                   ["Partilha CBS / IBS no DAS", `${formatPct(r.shareCBS)} / ${formatPct(r.shareIBS)}`],
                   ["Parcela que sai do DAS", formatPct(r.shareSai)],
                   ["IVA saída / compras", `${formatPct(r.ivaSaida)} / ${formatPct(r.ivaCompra)}`],
+                  ...(r.stAplicada
+                    ? ([["DAS sem ICMS na ST (cada regime)", `-${formatBRL(r.reducaoDasST)}`]] as [string, string][])
+                    : []),
                 ]}
               />
             </View>

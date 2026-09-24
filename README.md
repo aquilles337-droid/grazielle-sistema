@@ -89,3 +89,4 @@ os elementos destacados são marcados com `data-tour="..."`.
 - **Exportação:** o DAS sobre exportação exclui a fatia CBS+IBS (`shareTotal`) nos dois horizontes.
 - **RBT12 = 0** (início de atividade): usa a alíquota nominal.
 - **Repasse mínimo:** `null` ("Inviável") quando o ganho do cliente é ≤ 0.
+- **ICMS-ST (Anexos I/II):** na receita com ICMS já retido por substituição tributária, a fatia de ICMS sai do DAS (LC 123, art. 18, §4-A). No horizonte "2027" a redução (`receita × %ST × alíquota efetiva × partilha ICMS`) vale igual para puro e híbrido — o veredito não muda, só os valores absolutos. No "Pleno" o ICMS já foi extinto e o campo é ignorado.

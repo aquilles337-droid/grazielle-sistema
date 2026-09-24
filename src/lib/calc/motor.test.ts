@@ -147,3 +147,38 @@ describe("regime de alíquota e reduções", () => {
     expect(regimePorReducao(0.55)).toBe("PERSONALIZADO");
   });
 });
+
+describe("substituição tributária (ICMS-ST)", () => {
+  const p2027 = { ...PREMISSAS_PADRAO, horizonte: "2027" as const };
+
+  it("2027, Anexo I: tira a parcela do ICMS do DAS na receita com ST, nos dois cenários", () => {
+    const sem = simular({ empresa: base, premissas: p2027 });
+    const com = simular({ empresa: { ...base, pctSubstituicaoTributaria: 0.5 }, premissas: p2027 });
+    // 50% de 50.000 × 7,19% × 33,5% (ICMS na 3ª faixa do Anexo I)
+    const esperado = 25_000 * 0.0719 * 0.335;
+    expect(com.stAplicada).toBe(true);
+    expect(com.reducaoDasST).toBeCloseTo(esperado, 6);
+    expect(com.dasPuro).toBeCloseTo(sem.dasPuro - esperado, 6);
+    expect(com.dasHib).toBeCloseTo(sem.dasHib - esperado, 6);
+  });
+
+  it("não muda a comparação nem o veredito (ICMS fica no DAS nos dois regimes em 2027)", () => {
+    const sem = simular({ empresa: base, premissas: p2027 });
+    const com = simular({ empresa: { ...base, pctSubstituicaoTributaria: 1 }, premissas: p2027 });
+    expect(com.deltaCusto).toBeCloseTo(sem.deltaCusto, 6);
+    expect(com.veredito).toBe(sem.veredito);
+  });
+
+  it("não se aplica no IVA pleno (ICMS extinto) nem em anexos de serviço (ISS)", () => {
+    const pleno = simular({ empresa: { ...base, pctSubstituicaoTributaria: 1 }, premissas: PREMISSAS_PADRAO });
+    expect(pleno.stAplicada).toBe(false);
+    expect(pleno.reducaoDasST).toBe(0);
+    const servico = simular({ empresa: { ...base, anexo: "III", pctSubstituicaoTributaria: 1 }, premissas: p2027 });
+    expect(servico.stAplicada).toBe(false);
+  });
+
+  it("Anexo II (indústria) usa a parcela do ICMS do anexo", () => {
+    const r = simular({ empresa: { ...base, anexo: "II", faixa: 3, pctSubstituicaoTributaria: 1 }, premissas: p2027 });
+    expect(r.reducaoDasST).toBeCloseTo(50_000 * r.aliqEf * 0.32, 6);
+  });
+});

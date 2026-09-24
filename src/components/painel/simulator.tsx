@@ -36,6 +36,7 @@ type FormState = {
   pctExportacao: string;
   pctB2B: string;
   pctComprasCreditaveis: string;
+  pctST: string;
   regimeSaida: RegimeSaida;
   reducaoSaida: string;
   reducaoCompras: string;
@@ -65,6 +66,7 @@ function toForm(input?: SimulationInput): FormState {
     pctExportacao: e ? pct(e.pctExportacao) : "0",
     pctB2B: e ? pct(e.pctB2B) : "50",
     pctComprasCreditaveis: e ? pct(e.pctComprasCreditaveis) : "40",
+    pctST: e?.pctSubstituicaoTributaria ? pct(e.pctSubstituicaoTributaria) : "0",
     regimeSaida: e ? (e.regimeSaida ?? regimePorReducao(e.reducaoSaida)) : "PADRAO",
     reducaoSaida: e ? pct(e.reducaoSaida) : "0",
     reducaoCompras: e ? pct(e.reducaoCompras) : "0",
@@ -87,6 +89,8 @@ function toInput(f: FormState): SimulationInput {
       pctExportacao: Math.min(frac(f.pctExportacao), 1),
       pctB2B: Math.min(frac(f.pctB2B), 1),
       pctComprasCreditaveis: Math.min(frac(f.pctComprasCreditaveis), 5),
+      // ICMS-ST só existe nos Anexos I e II (comércio e indústria)
+      pctSubstituicaoTributaria: f.anexo === "I" || f.anexo === "II" ? Math.min(frac(f.pctST), 1) : 0,
       regimeSaida: f.regimeSaida,
       reducaoSaida: Math.min(frac(f.reducaoSaida), 1),
       reducaoCompras: Math.min(frac(f.reducaoCompras), 1),
@@ -231,7 +235,24 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
                 max={500}
                 onChange={(v) => set("pctComprasCreditaveis", v)}
               />
+              {(form.anexo === "I" || form.anexo === "II") && (
+                <PctField label="% Receita com ICMS-ST" value={form.pctST} onChange={(v) => set("pctST", v)} />
+              )}
             </div>
+            {(form.anexo === "I" || form.anexo === "II") && num(form.pctST) > 0 && (
+              <p className="-mt-2 text-xs text-muted-foreground">
+                {form.horizonte === "2027" ? (
+                  <>
+                    <b>ICMS-ST:</b> na receita com ICMS já retido, o DAS sai sem a parcela do ICMS — nos dois regimes.
+                  </>
+                ) : (
+                  <>
+                    <b>ICMS-ST não aplicada no IVA pleno:</b> em 2033 o ICMS já foi extinto e a substituição deixa de
+                    existir. Mude o horizonte para <b>Transição 2027</b> para ver o efeito.
+                  </>
+                )}
+              </p>
+            )}
 
             <div data-tour="sim-reducoes" className="grid gap-3 rounded-md border border-dashed border-accent/30 bg-accent/[0.03] p-3">
               <Field label="Regime de alíquota na saída">
@@ -492,6 +513,12 @@ function Memoria({ result: r }: { result: SimulationResult }) {
     ["IVA saída / compras", `${formatPct(r.ivaSaida)} / ${formatPct(r.ivaCompra)}`],
     ["Receita interna / exportação", `${formatBRL(r.recInt)} / ${formatBRL(r.recExp)}`],
     ["Compras creditáveis", formatBRL(r.comp)],
+    ...(r.stAplicada
+      ? ([
+          ["Receita com ICMS-ST", formatBRL(r.recST)],
+          ["DAS sem ICMS na ST (cada regime)", `−${formatBRL(r.reducaoDasST)}`],
+        ] as [string, string][])
+      : []),
     ["Δ custo (Híbrido − Puro)", formatBRL(r.deltaCusto)],
     ["Δ crédito ao cliente", formatBRL(r.deltaCredito)],
     ["Ganho do cliente (× %B2B)", formatBRL(r.ganhoCliente)],
