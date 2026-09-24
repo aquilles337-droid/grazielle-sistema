@@ -268,7 +268,7 @@ export function SimulationReport({ escritorio, logo, contador, crc, empresa, tit
 
           <Text style={{ fontSize: 7.5, color: C.muted, marginTop: 6, lineHeight: 1.4 }}>
             Simulação de caráter estimativo, elaborada com base na LC 214/2025 e na partilha dos Anexos da LC 123/2006, a
-            partir das informações e premissas acima. Não substitui a análise individualizada do profissional responsável.
+            partir das informações e premissas acima.
           </Text>
         </View>
 
