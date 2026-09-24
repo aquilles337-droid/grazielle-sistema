@@ -1,4 +1,4 @@
-import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { REGIMES_SAIDA, VEREDITO_INFO, regimePorReducao, type SimulationInput, type SimulationResult, type VereditoTipo } from "@/lib/calc/motor";
 import { ANEXOS } from "@/lib/calc/tabelas-simples";
 import { formatBRL, formatCNPJ, formatDate, formatPct } from "@/lib/format";
@@ -30,22 +30,25 @@ const s = StyleSheet.create({
   header: {
     backgroundColor: C.grafite,
     color: "#fff",
-    paddingVertical: 18,
+    paddingVertical: 14,
     paddingHorizontal: 36,
-    marginBottom: 18,
+    marginBottom: 14,
     borderBottomWidth: 4,
     borderBottomColor: C.primary,
   },
+  headerRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+  logoBox: { backgroundColor: "#ffffff", borderRadius: 5, padding: 4, maxWidth: 130, height: 40, justifyContent: "center" },
+  logo: { maxWidth: 122, height: 32, objectFit: "contain" },
   headerOffice: { fontSize: 15, fontFamily: "Helvetica-Bold" },
   headerSub: { fontSize: 9, marginTop: 3, opacity: 0.85 },
   body: { paddingHorizontal: 36 },
   row: { flexDirection: "row" },
-  companyBox: { flexDirection: "row", justifyContent: "space-between", marginBottom: 14 },
+  companyBox: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
   label: { fontSize: 7.5, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 },
   companyName: { fontSize: 13, fontFamily: "Helvetica-Bold" },
   veredito: { borderRadius: 4, padding: 12, marginBottom: 14, borderLeftWidth: 4 },
   vereditoTitle: { fontSize: 16, fontFamily: "Helvetica-Bold", marginBottom: 3 },
-  kpis: { flexDirection: "row", gap: 8, marginBottom: 16 },
+  kpis: { flexDirection: "row", gap: 8, marginBottom: 12 },
   kpi: { flex: 1, borderWidth: 1, borderColor: C.border, borderRadius: 4, padding: 8 },
   kpiValue: { fontSize: 12, fontFamily: "Helvetica-Bold", marginTop: 2 },
   sectionTitle: {
@@ -82,6 +85,8 @@ const s = StyleSheet.create({
 
 export interface ReportData {
   escritorio: string;
+  /** Logo do escritório (PNG/JPG) exibida no cabeçalho. */
+  logo?: { data: Buffer; format: "png" | "jpg" } | null;
   contador: string;
   crc?: string | null;
   empresa: { nome: string; cnpj: string };
@@ -104,7 +109,7 @@ function KV({ rows }: { rows: [string, string][] }) {
   );
 }
 
-export function SimulationReport({ escritorio, contador, crc, empresa, titulo, data, input, resultado: r }: ReportData) {
+export function SimulationReport({ escritorio, logo, contador, crc, empresa, titulo, data, input, resultado: r }: ReportData) {
   const { empresa: e, premissas: p } = input;
   const cor = VEREDITO_COR[r.veredito];
   const anexoLabel = ANEXOS.find((a) => a.value === e.anexo)?.label ?? `Anexo ${e.anexo}`;
@@ -123,10 +128,20 @@ export function SimulationReport({ escritorio, contador, crc, empresa, titulo, d
     <Document title={`Régua do Híbrido — ${empresa.nome}`} author={escritorio} creator="Régua do Híbrido">
       <Page size="A4" style={s.page}>
         <View style={s.header} fixed>
-          <Text style={s.headerOffice}>{escritorio}</Text>
-          <Text style={s.headerSub}>
-            Relatório de Triagem Tributária · Simples puro x Regime Híbrido (LC 214/2025)
-          </Text>
+          <View style={s.headerRow}>
+            {logo ? (
+              <View style={s.logoBox}>
+                {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                <Image src={logo} style={s.logo} />
+              </View>
+            ) : null}
+            <View style={{ flex: 1 }}>
+              <Text style={s.headerOffice}>{escritorio}</Text>
+              <Text style={s.headerSub}>
+                Relatório de Triagem Tributária · Simples puro x Regime Híbrido (LC 214/2025)
+              </Text>
+            </View>
+          </View>
         </View>
 
         <View style={s.body}>

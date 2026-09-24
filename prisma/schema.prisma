@@ -70,6 +70,10 @@ model User {
   acessoAte  DateTime?
   // Teste grátis já utilizado (só um por conta)
   trialUsadoEm DateTime?
+  // White-label: logo do escritório no PDF (PNG/JPG guardado no banco — sobrevive a deploys)
+  logo           Bytes?    @db.MediumBlob
+  logoMime       String?   @db.VarChar(20)
+  logoAtualizadaEm DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

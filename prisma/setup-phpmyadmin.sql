@@ -29,6 +29,9 @@ CREATE TABLE `users` (
     `telefone` VARCHAR(20) NULL,
     `acessoAte` DATETIME(3) NULL,
     `trialUsadoEm` DATETIME(3) NULL,
+    `logo` MEDIUMBLOB NULL,
+    `logoMime` VARCHAR(20) NULL,
+    `logoAtualizadaEm` DATETIME(3) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 

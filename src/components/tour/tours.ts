@@ -168,7 +168,7 @@ export const TOURS: Record<TourId, TourStep[]> = {
       alvo: "sim-historico",
       titulo: "Histórico de simulações",
       texto:
-        "<b>Carregar</b>: traz a simulação de volta para o formulário. <b>PDF</b>: relatório com o nome do seu escritório, pronto para enviar ao cliente. <b>Lixeira</b>: exclui a simulação.",
+        "<b>Carregar</b>: traz a simulação de volta para o formulário. <b>PDF</b>: relatório com a logo e o nome do seu escritório (configure em Minha conta), pronto para enviar ao cliente. <b>Lixeira</b>: exclui a simulação.",
       lado: "top",
     },
     {
@@ -241,6 +241,19 @@ export const TOURS: Record<TourId, TourStep[]> = {
   ],
 
   conta: [
+    {
+      alvo: "conta-logo",
+      titulo: "Logo do escritório",
+      texto:
+        "Envie a logo do seu escritório (PNG ou JPG). Ela fica salva e aparece no cabeçalho de <b>todos os relatórios em PDF</b> que você gerar.",
+      lado: "right",
+    },
+    {
+      alvo: "conta-escritorio",
+      titulo: "Nome e CRC",
+      texto: "O nome do escritório vai no topo do PDF e o CRC no rodapé. Clique em <b>Salvar dados</b> após alterar.",
+      lado: "right",
+    },
     {
       alvo: "conta-senha",
       titulo: "Trocar senha",

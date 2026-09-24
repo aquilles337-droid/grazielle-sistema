@@ -52,7 +52,13 @@ npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma 
 - O acesso é liberado pelo webhook **e** pela sincronização ao abrir a tela de assinatura (não depende só do webhook). O ADMIN sempre tem acesso e pode liberar dias manualmente em `/admin`.
 - Variáveis: `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY`, `MP_WEBHOOK_SECRET`, `APP_URL` (ver `.env.example`).
 - Webhook: `https://SEU-DOMINIO/api/webhooks/mercadopago`, eventos **Pagamentos**, **Planos e assinaturas** (assinatura e pagamento recorrente).
-- Banco existente: rode no phpMyAdmin `prisma/update-002-assinaturas.sql` e depois `prisma/update-003-cpf-cartao.sql`.
+- Banco existente: rode no phpMyAdmin, na ordem, `prisma/update-002-assinaturas.sql`, `prisma/update-003-cpf-cartao.sql` e `prisma/update-004-logo-escritorio.sql`.
+
+## Logo do escritório no PDF
+
+Em **Minha conta → Seu escritório no relatório**, o contador envia a logo (PNG/JPG até 1 MB, validada pelo conteúdo do
+arquivo) e edita nome do escritório e CRC. A logo fica no banco (`users.logo`, MEDIUMBLOB) — não se perde em deploys —
+e aparece no cabeçalho de todos os PDFs dele.
 
 ## Apresentação guiada (onboarding)
 

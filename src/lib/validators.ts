@@ -70,6 +70,11 @@ export const cartaoSchema = z.object({
   aceitarSemTrial: z.boolean().optional(),
 });
 
+export const escritorioSchema = z.object({
+  escritorio: z.string().trim().max(160).optional().transform((v) => v || undefined),
+  crc: z.string().trim().toUpperCase().max(30).optional().transform((v) => v || undefined),
+});
+
 export const changePasswordSchema = z
   .object({
     senhaAtual: z.string().min(1, "Informe a senha atual").max(100),

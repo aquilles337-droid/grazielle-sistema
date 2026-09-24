@@ -1,6 +1,7 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { AccessError, AuthError, requireActiveUser } from "@/lib/auth";
 import { getSimulation } from "@/actions/simulations";
+import { prisma } from "@/lib/prisma";
 import { SimulationReport } from "@/components/pdf/simulation-report";
 
 export const runtime = "nodejs";
@@ -22,9 +23,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const sim = await getSimulation(id);
   if (!sim) return new Response("Simulação não encontrada", { status: 404 });
 
+  // Logo do escritório (white-label), se o contador tiver enviado
+  const marca = await prisma.user.findUnique({ where: { id: user.id }, select: { logo: true, logoMime: true } });
+  const logo =
+    marca?.logo && marca.logoMime
+      ? { data: Buffer.from(marca.logo), format: marca.logoMime === "image/png" ? ("png" as const) : ("jpg" as const) }
+      : null;
+
   const buffer = await renderToBuffer(
     <SimulationReport
       escritorio={user.escritorio || user.nome}
+      logo={logo}
       contador={user.nome}
       crc={user.crc}
       empresa={sim.company}
