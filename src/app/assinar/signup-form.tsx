@@ -118,7 +118,7 @@ export function SignupForm({ destino }: { destino: string }) {
         Continuar para o pagamento <ArrowRight />
       </Button>
       <p className="text-center text-xs text-muted-foreground">
-        Ao continuar você concorda que a ferramenta é de apoio e não substitui a análise profissional.
+        Ao continuar você concorda que a ferramenta é de apoio à sua análise profissional.
       </p>
     </form>
   );

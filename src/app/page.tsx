@@ -203,7 +203,7 @@ export default function LandingPage() {
         <div className="container grid gap-6 text-sm text-muted-foreground md:grid-cols-[1fr_auto] md:items-center">
           <div className="space-y-3">
             <Logo />
-            <p>© {new Date().getFullYear()} Régua do Híbrido. Ferramenta de triagem — não substitui o parecer profissional.</p>
+            <p>© {new Date().getFullYear()} Régua do Híbrido. Ferramenta de triagem tributária para contadores.</p>
           </div>
           <div className="flex flex-col items-start gap-3 md:items-end">
             <DesenvolvidoPor />
