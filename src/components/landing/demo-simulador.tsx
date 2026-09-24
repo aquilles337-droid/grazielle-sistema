@@ -1,13 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, SlidersHorizontal } from "lucide-react";
+import { Info } from "lucide-react";
 import {
   PREMISSAS_PADRAO,
-  REGIMES_SAIDA,
   VEREDITO_INFO,
   simular,
-  type Horizonte,
   type RegimeSaida,
   type VereditoTipo,
 } from "@/lib/calc/motor";
@@ -15,15 +13,15 @@ import { ANEXOS, faixaPorRbt12, type Anexo } from "@/lib/calc/tabelas-simples";
 import { formatBRL, formatPct } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/select";
 import { VereditoBadge } from "@/components/shared/veredito-badge";
 
 /*
- * Demonstração real na página de vendas: usa exatamente o mesmo motor de cálculo
- * (simular) e as mesmas premissas padrão do sistema — os números batem com o simulador.
+ * Demonstração real na página de vendas: 4 casos fixos (não editáveis) calculados
+ * pelo mesmo motor do sistema, com as premissas padrão no horizonte de transição 2027.
  */
+
+// Premissas da demonstração: padrão do sistema, horizonte 2027 (CBS 9,21% + IBS 0,1%)
+const PREMISSAS_DEMO = { ...PREMISSAS_PADRAO, horizonte: "2027" as const };
 
 type Dados = {
   anexo: Anexo;
@@ -72,6 +70,9 @@ const COR_VEREDITO: Record<VereditoTipo, string> = {
 
 function explicacao(v: VereditoTipo, r: ReturnType<typeof simular>, repasse: number) {
   const custo = Math.abs(r.deltaCusto);
+  if (v === "LIMITROFE") {
+    return `A diferença entre os regimes fica dentro da margem de 0,3% da receita (${formatBRL(r.tolerancia)}/mês): na prática, um empate. Vale decidir pelo custo de apuração e pelo perfil dos clientes.`;
+  }
   if (r.deltaCusto <= 0) {
     return `No Híbrido a carga cai ${formatBRL(custo)}/mês — ganho sem precisar negociar nada com os clientes.`;
   }
@@ -80,7 +81,6 @@ function explicacao(v: VereditoTipo, r: ReturnType<typeof simular>, repasse: num
     return `${base} Se ${formatPct(repasse, 0)} desse ganho voltar em preço, sobra ${formatBRL(r.caixaComRepasse)}/mês no caixa.`;
   if (v === "NEGOCIAR" && r.repasseMin !== null)
     return `${base} Só compensa se o cliente devolver pelo menos ${formatPct(r.repasseMin, 1)} desse crédito em preço.`;
-  if (v === "LIMITROFE") return `${base} Com o repasse esperado, a diferença fica dentro da margem de 0,3% da receita.`;
   return r.ganhoCliente <= 0
     ? `No Híbrido a empresa pagaria ${formatBRL(custo)}/mês a mais e, vendendo para consumidor final, não há cliente que aproveite o crédito.`
     : `${base} Nem com 100% de repasse o Híbrido se paga.`;
@@ -88,11 +88,7 @@ function explicacao(v: VereditoTipo, r: ReturnType<typeof simular>, repasse: num
 
 export function DemoSimulador() {
   const [exemplo, setExemplo] = useState(EXEMPLOS[0].id);
-  const [d, setD] = useState<Dados>(EXEMPLOS[0].dados);
-  const [horizonte, setHorizonte] = useState<Horizonte>("PLENO");
-  const [aberto, setAberto] = useState(false);
-
-  const premissas = { ...PREMISSAS_PADRAO, horizonte };
+  const d = EXEMPLOS.find((x) => x.id === exemplo)!.dados;
   const faixa = faixaPorRbt12(d.rbt12);
   const r = useMemo(
     () =>
@@ -109,28 +105,17 @@ export function DemoSimulador() {
           reducaoSaida: d.reducaoSaida / 100,
           reducaoCompras: d.reducaoCompras / 100,
         },
-        premissas: { ...PREMISSAS_PADRAO, horizonte },
+        premissas: PREMISSAS_DEMO,
       }),
-    [d, faixa, horizonte],
+    [d, faixa],
   );
-
-  const escolher = (id: string) => {
-    const e = EXEMPLOS.find((x) => x.id === id)!;
-    setExemplo(id);
-    setD(e.dados);
-  };
-  const alterar = <K extends keyof Dados>(k: K, v: Dados[K]) => {
-    setExemplo("");
-    setD((x) => ({ ...x, [k]: v }));
-  };
-  const num = (s: string, max = Infinity) => Math.min(Math.max(Number(s.replace(",", ".")) || 0, 0), max);
 
   return (
     <Card id="demonstracao" className="scroll-mt-24 overflow-hidden border-t-4 border-t-accent shadow-xl">
       <CardContent className="grid gap-4 p-5">
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-semibold">Demonstração real</p>
-          <span className="text-xs text-muted-foreground">mesmo cálculo do sistema · LC 214/2025</span>
+          <span className="text-xs text-muted-foreground">mesmo cálculo do sistema · transição 2027</span>
         </div>
 
         {/* Exemplos prontos */}
@@ -139,7 +124,7 @@ export function DemoSimulador() {
             <button
               key={e.id}
               type="button"
-              onClick={() => escolher(e.id)}
+              onClick={() => setExemplo(e.id)}
               className={cn(
                 "rounded-md border px-3 py-2 text-left transition-colors",
                 exemplo === e.id ? "border-accent bg-accent/10" : "hover:border-accent/50",
@@ -151,88 +136,16 @@ export function DemoSimulador() {
           ))}
         </div>
 
-        {/* Dados (editáveis) */}
-        <button
-          type="button"
-          onClick={() => setAberto((a) => !a)}
-          className="flex items-center justify-between gap-3 rounded-md bg-secondary px-3 py-2 text-left text-xs text-muted-foreground"
-        >
-          <span className="flex items-center gap-2">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-accent" />
-            {ANEXOS.find((a) => a.value === d.anexo)?.label.split(" — ")[0]} · {faixa}ª faixa · receita {formatBRL(d.receitaMensal)}/mês ·
-            B2B {d.pctB2B}% · compras {d.pctCompras}%
+        {/* Dados do exemplo (somente leitura) */}
+        <div className="flex items-start gap-2 rounded-md bg-secondary px-3 py-2 text-xs text-muted-foreground">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
+          <span>
+            {ANEXOS.find((a) => a.value === d.anexo)?.label} · {faixa}ª faixa · RBT12 {formatBRL(d.rbt12)} · receita{" "}
+            {formatBRL(d.receitaMensal)}/mês · B2B {d.pctB2B}% · compras creditáveis {d.pctCompras}%
+            {d.reducaoSaida > 0 && ` · redução na saída ${d.reducaoSaida}% e nas compras ${d.reducaoCompras}%`} ·{" "}
+            <b className="text-foreground">Transição 2027</b> (CBS 9,21% + IBS 0,1%)
           </span>
-          <span className="flex shrink-0 items-center gap-1 font-medium text-accent">
-            {aberto ? "Ocultar" : "Ajustar"} <ChevronDown className={cn("h-4 w-4 transition-transform", aberto && "rotate-180")} />
-          </span>
-        </button>
-
-        {aberto && (
-          <div className="grid grid-cols-2 gap-3 rounded-md border p-3">
-            <Campo label="Anexo">
-              <NativeSelect value={d.anexo} onChange={(e) => alterar("anexo", e.target.value as Anexo)}>
-                {ANEXOS.map((a) => (
-                  <option key={a.value} value={a.value}>
-                    {a.label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Campo>
-            <Campo label="Horizonte">
-              <NativeSelect value={horizonte} onChange={(e) => setHorizonte(e.target.value as Horizonte)}>
-                <option value="PLENO">IVA pleno (2033)</option>
-                <option value="2027">Transição 2027</option>
-              </NativeSelect>
-            </Campo>
-            <Campo label="RBT12 (R$)">
-              <Input type="number" min={0} value={d.rbt12} onChange={(e) => alterar("rbt12", num(e.target.value, 4_800_000))} />
-            </Campo>
-            <Campo label="Receita mensal (R$)">
-              <Input type="number" min={0} value={d.receitaMensal} onChange={(e) => alterar("receitaMensal", num(e.target.value))} />
-            </Campo>
-            <Campo label="% B2B">
-              <Input type="number" min={0} max={100} value={d.pctB2B} onChange={(e) => alterar("pctB2B", num(e.target.value, 100))} />
-            </Campo>
-            <Campo label="% Compras creditáveis">
-              <Input type="number" min={0} max={500} value={d.pctCompras} onChange={(e) => alterar("pctCompras", num(e.target.value, 500))} />
-            </Campo>
-            <Campo label="Regime na saída" className="col-span-2">
-              <NativeSelect
-                value={d.regimeSaida}
-                onChange={(e) => {
-                  const reg = e.target.value as RegimeSaida;
-                  const red = REGIMES_SAIDA[reg].reducao;
-                  setExemplo("");
-                  setD((x) => ({ ...x, regimeSaida: reg, reducaoSaida: red === null ? x.reducaoSaida : red * 100 }));
-                }}
-              >
-                {(Object.keys(REGIMES_SAIDA) as RegimeSaida[]).map((k) => (
-                  <option key={k} value={k}>
-                    {REGIMES_SAIDA[k].label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Campo>
-            <Campo label="Redução na saída (%)">
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={d.reducaoSaida}
-                onChange={(e) => alterar("reducaoSaida", num(e.target.value, 100))}
-              />
-            </Campo>
-            <Campo label="Redução nas compras (%)">
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={d.reducaoCompras}
-                onChange={(e) => alterar("reducaoCompras", num(e.target.value, 100))}
-              />
-            </Campo>
-          </div>
-        )}
+        </div>
 
         {d.receitaMensal > 0 && (
           <>
@@ -243,7 +156,7 @@ export function DemoSimulador() {
                 <VereditoBadge veredito={r.veredito} />
               </div>
               <p className="mt-1 text-lg font-bold">{VEREDITO_INFO[r.veredito].titulo}</p>
-              <p className="mt-1 text-sm text-foreground/80">{explicacao(r.veredito, r, premissas.repasseEsperado)}</p>
+              <p className="mt-1 text-sm text-foreground/80">{explicacao(r.veredito, r, PREMISSAS_DEMO.repasseEsperado)}</p>
             </div>
 
             {/* Comparativo */}
@@ -275,7 +188,7 @@ export function DemoSimulador() {
             {/* Indicadores */}
             <div className="grid grid-cols-2 gap-2">
               <Kpi label="Caixa sem negociar" valor={r.caixaSemNegociar} />
-              <Kpi label={`Caixa c/ repasse de ${formatPct(premissas.repasseEsperado, 0)}`} valor={r.caixaComRepasse} />
+              <Kpi label={`Caixa c/ repasse de ${formatPct(PREMISSAS_DEMO.repasseEsperado, 0)}`} valor={r.caixaComRepasse} />
               <div className="rounded-md border p-3">
                 <p className="text-xs text-muted-foreground">Repasse mínimo</p>
                 <p className="font-semibold">
@@ -291,15 +204,6 @@ export function DemoSimulador() {
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function Campo({ label, className, children }: { label: string; className?: string; children: React.ReactNode }) {
-  return (
-    <div className={cn("grid gap-1", className)}>
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      {children}
-    </div>
   );
 }
 
