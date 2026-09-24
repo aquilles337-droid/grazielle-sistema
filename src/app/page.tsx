@@ -14,25 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LeadForm } from "@/components/landing/lead-form";
 import { Pricing } from "@/components/landing/pricing";
-import { VereditoBadge } from "@/components/shared/veredito-badge";
-import { PREMISSAS_PADRAO, simular } from "@/lib/calc/motor";
-import { formatBRL, formatPct } from "@/lib/format";
-
-// Exemplo real rodando o próprio motor de cálculo (gerado no build)
-const exemplo = simular({
-  empresa: {
-    anexo: "I",
-    faixa: 3,
-    rbt12: 600_000,
-    receitaMensal: 50_000,
-    pctExportacao: 0,
-    pctB2B: 0.8,
-    pctComprasCreditaveis: 0.6,
-    reducaoSaida: 0,
-    reducaoCompras: 0,
-  },
-  premissas: PREMISSAS_PADRAO,
-});
+import { DemoSimulador } from "@/components/landing/demo-simulador";
 
 const features = [
   {
@@ -100,7 +82,7 @@ export default function LandingPage() {
         {/* Hero */}
         <section className="relative overflow-hidden">
           <FaixasDecorativas className="absolute -bottom-10 -right-24 hidden w-[720px] opacity-[0.12] lg:block" />
-          <div className="container relative grid items-center gap-12 py-16 md:py-24 lg:grid-cols-2">
+          <div className="container relative grid items-start gap-12 py-16 md:py-20 lg:grid-cols-2">
             <div className="space-y-6">
               <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-sm font-medium text-accent">
                 Reforma Tributária · LC 214/2025 · Simples Nacional
@@ -120,7 +102,7 @@ export default function LandingPage() {
                   </a>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
-                  <a href="#como-funciona">Ver como funciona</a>
+                  <a href="#demonstracao">Testar a demonstração</a>
                 </Button>
               </div>
               <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
@@ -133,28 +115,8 @@ export default function LandingPage() {
               <DesenvolvidoPor className="pt-2" />
             </div>
 
-            {/* Preview do resultado */}
-            <Card className="overflow-hidden border-t-4 border-t-accent shadow-xl">
-              <CardHeader>
-                <CardDescription>Exemplo · Comércio, Anexo I, faixa 3 · receita de {formatBRL(50_000)}/mês</CardDescription>
-                <CardTitle className="flex items-center justify-between">
-                  Veredito
-                  <VereditoBadge veredito={exemplo.veredito} className="text-sm" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <Metric label="Custo Simples puro" value={formatBRL(exemplo.custoPuro)} />
-                  <Metric label="Custo Híbrido" value={formatBRL(exemplo.custoHib)} />
-                  <Metric label="Crédito extra ao cliente B2B" value={formatBRL(exemplo.ganhoCliente)} positive />
-                  <Metric label="Repasse mínimo" value={formatPct(exemplo.repasseMin, 1)} />
-                </div>
-                <div className="rounded-md bg-grafite p-4 text-white">
-                  <p className="text-xs uppercase tracking-wide text-white/70">Caixa com 50% de repasse</p>
-                  <p className="text-2xl font-bold text-[#5fc3dd]">{formatBRL(exemplo.caixaComRepasse)}/mês</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Demonstração real — mesmo motor de cálculo do sistema */}
+            <DemoSimulador />
           </div>
         </section>
 
@@ -251,15 +213,6 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-    </div>
-  );
-}
-
-function Metric({ label, value, positive }: { label: string; value: string; positive?: boolean }) {
-  return (
-    <div className="rounded-md border p-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={positive ? "font-semibold text-accent" : "font-semibold"}>{value}</p>
     </div>
   );
 }
