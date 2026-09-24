@@ -135,7 +135,7 @@ export interface SimulationResult {
 }
 
 export const PREMISSAS_PADRAO: Premissas = {
-  cbsReferencia: 0.0921,
+  cbsReferencia: 0.0911,
   ibsTransicao: 0.001,
   ivaPleno: 0.265,
   repasseEsperado: 0.5,

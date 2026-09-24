@@ -85,7 +85,7 @@ os elementos destacados são marcados com `data-tour="..."`.
 ## Premissas de cálculo que vale revisar
 
 - **Partilha CBS/IBS:** `shareCBS` = PIS + COFINS e `shareIBS` = ICMS (Anexos I/II) ou ISS (III/IV/V) da tabela de partilha da LC 123. Na 6ª faixa ICMS/ISS saem do DAS, então `shareIBS = 0`.
-- **Horizonte:** "2027" tira só a CBS do DAS e usa IVA = CBS + IBS de transição (9,31%); "Pleno" tira CBS + IBS e usa 26,5%.
+- **Horizonte:** "2027" tira só a CBS do DAS e usa IVA = CBS + IBS de transição (9,11% + 0,1% = 9,21%); "Pleno" tira CBS + IBS e usa 26,5%.
 - **Exportação:** o DAS sobre exportação exclui a fatia CBS+IBS (`shareTotal`) nos dois horizontes.
 - **RBT12 = 0** (início de atividade): usa a alíquota nominal.
 - **Repasse mínimo:** `null` ("Inviável") quando o ganho do cliente é ≤ 0.

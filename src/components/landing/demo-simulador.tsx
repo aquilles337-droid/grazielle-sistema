@@ -20,7 +20,7 @@ import { VereditoBadge } from "@/components/shared/veredito-badge";
  * pelo mesmo motor do sistema, com as premissas padrão no horizonte de transição 2027.
  */
 
-// Premissas da demonstração: padrão do sistema, horizonte 2027 (CBS 9,21% + IBS 0,1%)
+// Premissas da demonstração: padrão do sistema, horizonte 2027 (CBS 9,11% + IBS 0,1% = 9,21%)
 const PREMISSAS_DEMO = { ...PREMISSAS_PADRAO, horizonte: "2027" as const };
 
 type Dados = {
@@ -143,7 +143,7 @@ export function DemoSimulador() {
             {ANEXOS.find((a) => a.value === d.anexo)?.label} · {faixa}ª faixa · RBT12 {formatBRL(d.rbt12)} · receita{" "}
             {formatBRL(d.receitaMensal)}/mês · B2B {d.pctB2B}% · compras creditáveis {d.pctCompras}%
             {d.reducaoSaida > 0 && ` · redução na saída ${d.reducaoSaida}% e nas compras ${d.reducaoCompras}%`} ·{" "}
-            <b className="text-foreground">Transição 2027</b> (CBS 9,21% + IBS 0,1%)
+            <b className="text-foreground">Transição 2027</b> (CBS 9,11% + IBS 0,1% = 9,21%)
           </span>
         </div>
 

@@ -55,7 +55,7 @@ describe("simular — horizonte 2027", () => {
   it("retira apenas a CBS do DAS e usa CBS + IBS de transição", () => {
     const r = simular({ empresa: base, premissas: { ...PREMISSAS_PADRAO, horizonte: "2027" } });
     expect(r.shareSai).toBeCloseTo(0.155, 6);
-    expect(r.iva).toBeCloseTo(0.0931, 6);
+    expect(r.iva).toBeCloseTo(0.0921, 6);
   });
 });
 

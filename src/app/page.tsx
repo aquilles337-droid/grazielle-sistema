@@ -25,7 +25,7 @@ const features = [
   {
     icon: Scale,
     title: "Baseado na LC 214/2025",
-    desc: "CBS de 9,21%, IBS de transição, IVA pleno de 26,5%, reduções de alíquota e partilha oficial dos Anexos I a V.",
+    desc: "CBS de 9,11% + IBS de 0,1% em 2027, IVA pleno de 26,5%, reduções de alíquota e partilha oficial dos Anexos I a V.",
   },
   {
     icon: Lock,
