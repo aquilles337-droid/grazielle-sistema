@@ -121,7 +121,7 @@ export const TOURS: Record<TourId, TourStep[]> = {
       alvo: "sim-premissas",
       titulo: "Premissas da Reforma",
       texto:
-        "<b>Horizonte</b>: transição 2027 ou IVA pleno. <b>Saldo credor</b>: se o crédito excedente pode ser recuperado. Alíquotas de CBS, IBS e IVA, e o <b>repasse esperado</b> do crédito ao seu cliente. Já vêm com os valores da LC 214/2025.",
+        "<b>Horizonte</b>: o ano da simulação — transição 2027–2028, cada ano de 2029 a 2032 ou IVA pleno (2033). <b>Saldo credor</b>: se o crédito excedente pode ser recuperado. Alíquotas de CBS, IBS e IVA, e o <b>repasse esperado</b> do crédito ao seu cliente. Já vêm com os valores da LC 214/2025.",
       lado: "right",
     },
     {

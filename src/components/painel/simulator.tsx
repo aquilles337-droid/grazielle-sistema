@@ -17,7 +17,8 @@ import {
   type SimulationResult,
   type VereditoTipo,
 } from "@/lib/calc/motor";
-import { ANEXOS, faixaPorRbt12, LIMITE_SIMPLES, type Anexo, type Faixa } from "@/lib/calc/tabelas-simples";
+import { linhaIvaAno, linhasPartilha } from "@/lib/calc/apresentacao";
+import { ANEXOS, HORIZONTES, faixaPorRbt12, LIMITE_SIMPLES, type Anexo, type Faixa } from "@/lib/calc/tabelas-simples";
 import { formatBRL, formatPct } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -241,14 +242,14 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
             </div>
             {(form.anexo === "I" || form.anexo === "II") && num(form.pctST) > 0 && (
               <p className="-mt-2 text-xs text-muted-foreground">
-                {form.horizonte === "2027" ? (
+                {form.horizonte !== "PLENO" ? (
                   <>
                     <b>ICMS-ST:</b> na receita com ICMS já retido, o DAS sai sem a parcela do ICMS — nos dois regimes.
                   </>
                 ) : (
                   <>
                     <b>ICMS-ST não aplicada no IVA pleno:</b> em 2033 o ICMS já foi extinto e a substituição deixa de
-                    existir. Mude o horizonte para <b>Transição 2027</b> para ver o efeito.
+                    existir. Escolha um ano entre <b>2027</b> e <b>2032</b> para ver o efeito.
                   </>
                 )}
               </p>
@@ -287,8 +288,11 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
             <div className="grid grid-cols-2 gap-3">
               <Field label="Horizonte">
                 <NativeSelect value={form.horizonte} onChange={(e) => set("horizonte", e.target.value as Horizonte)}>
-                  <option value="PLENO">IVA pleno (2033)</option>
-                  <option value="2027">Transição 2027</option>
+                  {HORIZONTES.map((h) => (
+                    <option key={h.value} value={h.value}>
+                      {h.label}
+                    </option>
+                  ))}
                 </NativeSelect>
               </Field>
               <Field label="Saldo credor">
@@ -300,11 +304,16 @@ export function Simulator({ companyId, initial }: { companyId: string; initial?:
                   <option value="0">Não recuperável</option>
                 </NativeSelect>
               </Field>
-              <PctField label="CBS de referência" value={form.cbsReferencia} onChange={(v) => set("cbsReferencia", v)} />
-              <PctField label="IBS de transição" value={form.ibsTransicao} onChange={(v) => set("ibsTransicao", v)} />
-              <PctField label="IVA pleno" value={form.ivaPleno} onChange={(v) => set("ivaPleno", v)} />
+              <PctField label="CBS 2027–2028" value={form.cbsReferencia} onChange={(v) => set("cbsReferencia", v)} />
+              <PctField label="IBS 2027–2028" value={form.ibsTransicao} onChange={(v) => set("ibsTransicao", v)} />
+              <PctField label="IVA pleno (2033)" value={form.ivaPleno} onChange={(v) => set("ivaPleno", v)} />
               <PctField label="Repasse esperado" value={form.repasseEsperado} onChange={(v) => set("repasseEsperado", v)} />
             </div>
+            <p className="-mt-1 text-xs text-muted-foreground">
+              <b>2029 a 2032:</b> CBS cheia (CBS 2027–2028 + 0,1 p.p.) e IBS de 10%, 20%, 30% e 40% do IBS pleno — a
+              mesma proporção em que o ICMS/ISS vira IBS nas tabelas do Simples (LC 214/2025, Anexos XVIII a XXII).
+              As alíquotas oficiais desses anos serão fixadas pelo Senado.
+            </p>
             <Button
               data-tour="sim-restaurar"
               variant="ghost"
@@ -508,8 +517,8 @@ function Memoria({ result: r }: { result: SimulationResult }) {
   const items: [string, string][] = [
     ["Alíquota nominal / parcela a deduzir", `${formatPct(r.aliquotaNominal)} / ${formatBRL(r.parcelaDeduzir)}`],
     ["Alíquota efetiva", formatPct(r.aliqEf, 4)],
-    [r.tetoISSAplicado ? "Partilha CBS / ISS (teto 5%)" : "Partilha CBS / IBS no DAS", `${formatPct(r.shareCBS)} / ${formatPct(r.shareIBS)}`],
-    ["Parcela que sai do DAS", formatPct(r.shareSai)],
+    ...linhasPartilha(r),
+    ...linhaIvaAno(r),
     ["IVA saída / compras", `${formatPct(r.ivaSaida)} / ${formatPct(r.ivaCompra)}`],
     ["Receita interna / exportação", `${formatBRL(r.recInt)} / ${formatBRL(r.recExp)}`],
     ["Compras creditáveis", formatBRL(r.comp)],

@@ -191,7 +191,7 @@ describe("partilha de 2027–2028 (LC 227/2026)", () => {
     const r = simular({ empresa: { ...base, anexo: "III", faixa: 5, rbt12: 3_000_000 }, premissas: p2027 });
     expect(r.aliqEf).toBeCloseTo(0.16812, 6);
     expect(r.tetoISSAplicado).toBe(true);
-    expect(r.aliqEf * r.shareIBS).toBeCloseTo(0.05, 9);
+    expect(r.aliqEf * (r.shareICMSISS ?? 0)).toBeCloseTo(0.05, 9);
     expect(r.aliqEf * r.shareSai).toBeCloseTo((0.16812 - 0.05) * 0.2346, 9);
   });
 
@@ -216,5 +216,65 @@ describe("partilha de 2027–2028 (LC 227/2026)", () => {
   it("teto do ISS não se aplica no IVA pleno (ISS extinto)", () => {
     const r = simular({ empresa: { ...base, anexo: "III", faixa: 5, rbt12: 3_000_000 }, premissas: PREMISSAS_PADRAO });
     expect(r.tetoISSAplicado).toBe(false);
+  });
+});
+
+describe("transição ano a ano (LC 214/2025, Anexos XVIII a XXII; LC 227/2026)", () => {
+  const em = (h: "2027" | "2029" | "2030" | "2031" | "2032" | "PLENO") => ({ ...PREMISSAS_PADRAO, horizonte: h });
+  const sim = (anexo: DadosEmpresa["anexo"], faixa: DadosEmpresa["faixa"], rbt12: number, h: Parameters<typeof em>[0]) =>
+    simular({ empresa: { ...base, anexo, faixa, rbt12 }, premissas: em(h) });
+
+  it("Anexo I, 1ª faixa: ICMS 30,60% / IBS 3,40% em 2029 e ICMS 20,40% / IBS 13,60% em 2032", () => {
+    const a = sim("I", 1, 150_000, "2029");
+    expect(a.shareICMSISS).toBeCloseTo(0.306, 9);
+    expect(a.shareIBS).toBeCloseTo(0.034, 9);
+    expect(a.shareSai).toBeCloseTo(0.155 + 0.034, 9);
+    const b = sim("I", 1, 150_000, "2032");
+    expect(b.shareICMSISS).toBeCloseTo(0.204, 9);
+    expect(b.shareIBS).toBeCloseTo(0.136, 9);
+  });
+
+  it("Anexo II, 3ª faixa, 2031: ICMS 22,40% / IBS 9,60%", () => {
+    const r = sim("II", 3, 600_000, "2031");
+    expect(r.shareICMSISS).toBeCloseTo(0.224, 9);
+    expect(r.shareIBS).toBeCloseTo(0.096, 9);
+  });
+
+  it("Anexo IV, 2ª faixa, 2029: ISS 36% / IBS 4%; Anexo V, 5ª faixa, 2030: ISS 18,80% / IBS 4,70%", () => {
+    const iv = sim("IV", 2, 300_000, "2029");
+    expect(iv.shareICMSISS).toBeCloseTo(0.36, 9);
+    expect(iv.shareIBS).toBeCloseTo(0.04, 9);
+    const v = sim("V", 5, 2_000_000, "2030");
+    expect(v.shareICMSISS).toBeCloseTo(0.188, 9);
+    expect(v.shareIBS).toBeCloseTo(0.047, 9);
+  });
+
+  it("6ª faixa em 2027–2028: nominal 18,90% no Anexo I (19% a partir de 2029)", () => {
+    expect(sim("I", 6, 4_000_000, "2027").aliquotaNominal).toBeCloseTo(0.189, 9);
+    expect(sim("I", 6, 4_000_000, "2029").aliquotaNominal).toBeCloseTo(0.19, 9);
+    expect(sim("I", 6, 4_000_000, "2027").shareSai).toBeCloseTo(0.3402, 9);
+  });
+
+  it("teto do ISS cai com os anos: Anexo III, 5ª faixa, 2030 → ISS 4%, CBS 21,31% e IBS 9,15% do excedente", () => {
+    const r = sim("III", 5, 3_000_000, "2030");
+    expect(r.tetoISSAplicado).toBe(true);
+    expect(r.aliqEf * (r.shareICMSISS ?? 0)).toBeCloseTo(0.04, 9);
+    expect(r.aliqEf * r.shareCBS).toBeCloseTo((r.aliqEf - 0.04) * 0.2131, 9);
+    expect(r.aliqEf * r.shareIBS).toBeCloseTo((r.aliqEf - 0.04) * 0.0915, 9);
+  });
+
+  it("IVA do ano: CBS cheia + fração do IBS (10% em 2029, 40% em 2032)", () => {
+    const cbs = 0.0921;
+    const ibs = 0.265 - cbs;
+    expect(sim("I", 3, 600_000, "2029").iva).toBeCloseTo(cbs + ibs * 0.1, 9);
+    expect(sim("I", 3, 600_000, "2032").iva).toBeCloseTo(cbs + ibs * 0.4, 9);
+    expect(sim("I", 3, 600_000, "2027").iva).toBeCloseTo(0.0921, 9);
+    expect(sim("I", 3, 600_000, "PLENO").iva).toBeCloseTo(0.265, 9);
+  });
+
+  it("ICMS-ST vale até 2032 com o ICMS do ano", () => {
+    const r = simular({ empresa: { ...base, pctSubstituicaoTributaria: 1 }, premissas: em("2030") });
+    expect(r.stAplicada).toBe(true);
+    expect(r.reducaoDasST).toBeCloseTo(50_000 * r.aliqEf * 0.268, 6);
   });
 });

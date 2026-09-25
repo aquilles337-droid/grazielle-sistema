@@ -84,12 +84,13 @@ os elementos destacados são marcados com `data-tour="..."`.
 
 ## Premissas de cálculo que vale revisar
 
-- **Base legal:** LC 214/2025 com as alterações da LC 227/2026 (texto em `docs/LC-227-2026.pdf`).
-- **Partilha CBS/IBS:** `shareCBS` = PIS + COFINS e `shareIBS` = ICMS (Anexos I/II) ou ISS (III/IV/V) da tabela de partilha da LC 123. Na 6ª faixa ICMS/ISS saem do DAS, então `shareIBS = 0`.
-- **Horizonte:** "2027" tira só a CBS do DAS e usa IVA = CBS + IBS de transição (9,11% + 0,1% = 9,21%); "Pleno" tira CBS + IBS e usa 26,5%.
-- **Partilha de 2027–2028 (LC 227/2026, Anexo XX):** as colunas CBS + IBS somam o antigo PIS + COFINS; no Anexo III, 6ª faixa, a CBS é 19,29%. Na 5ª faixa dos Anexos III e IV o ISS é limitado a 5% da receita e o excedente (alíquota efetiva − 5%) é repartido — 23,46% (Anexo III) e 36,67% (Anexo IV) vão para CBS + IBS.
+- **Base legal:** LC 214/2025 (tabelas do Simples nos Anexos XVIII a XXII) com as alterações da LC 227/2026. Textos em `docs/`.
+- **Horizontes:** 2027–2028, 2029, 2030, 2031, 2032 e IVA pleno (2033+). No Híbrido saem do DAS as colunas de CBS e IBS do ano; o ICMS/ISS fica.
+- **Partilha por ano:** `shareCBS` (antigo PIS + COFINS) e `shareIBS` (antigo ICMS/ISS) da tabela base. Em 2027–2028 CBS + IBS somam `shareCBS`; de 2029 a 2032 o IBS no DAS é 10/20/30/40% de `shareIBS` e o ICMS/ISS fica com o resto; em 2033 o IBS é `shareIBS` inteiro. Na 6ª faixa (ICMS/ISS fora do DAS) `shareIBS = 0`; em 2027–2028 a 6ª faixa tem nominal 0,1 p.p. menor e CBS própria.
+- **Teto do ISS (5ª faixa, Anexos III e IV):** 5% em 2027–2028, 4,5% em 2029, 4% em 2030, 3,5% em 2031 e 3% em 2032; o excedente é repartido pelos coeficientes de CBS e IBS da lei (`TETO_ISS` em `tabelas-simples.ts`).
+- **IVA do ano:** 2027–2028 = CBS 9,11% + IBS 0,1% (arts. 344 e 347). 2029–2032 = CBS cheia (+0,1 p.p.) + 10/20/30/40% do IBS pleno — estimativa, pois as alíquotas de referência desses anos serão fixadas pelo Senado. 2033 = IVA pleno (26,5%).
 - **Opção pelo Híbrido:** semestral (janeiro ou julho), exercida em setembro ou março, irretratável no semestre (LC 123, art. 13, §§ 9º e 10).
-- **Exportação:** o DAS sobre exportação exclui a fatia CBS+IBS (`shareTotal`) nos dois horizontes.
+- **ICMS-ST:** vale enquanto existir ICMS (até 2032), com a parcela de ICMS do ano; ignorada no IVA pleno.
+- **Exportação:** o DAS sobre exportação exclui CBS, IBS e ICMS/ISS (`shareTotal`) em todos os horizontes.
 - **RBT12 = 0** (início de atividade): usa a alíquota nominal.
 - **Repasse mínimo:** `null` ("Inviável") quando o ganho do cliente é ≤ 0.
-- **ICMS-ST (Anexos I/II):** na receita com ICMS já retido por substituição tributária, a fatia de ICMS sai do DAS (LC 123, art. 18, §4-A). No horizonte "2027" a redução (`receita × %ST × alíquota efetiva × partilha ICMS`) vale igual para puro e híbrido — o veredito não muda, só os valores absolutos. No "Pleno" o ICMS já foi extinto e o campo é ignorado.

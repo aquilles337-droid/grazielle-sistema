@@ -103,7 +103,7 @@ export const simulationInputSchema = z.object({
     ivaPleno: fracao(),
     repasseEsperado: fracao(),
     saldoCredorRecuperavel: z.boolean(),
-    horizonte: z.enum(["2027", "PLENO"]),
+    horizonte: z.enum(["2027", "2029", "2030", "2031", "2032", "PLENO"]),
   }),
 });
 

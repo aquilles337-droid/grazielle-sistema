@@ -8,9 +8,12 @@
  * Convenção: TODOS os percentuais são frações (0,5 = 50%). Valores em R$.
  */
 
-import { type Anexo, type Faixa, TETO_ISS, getFaixa } from "./tabelas-simples";
+import { type Anexo, type Faixa, type Horizonte, FRACAO_IBS, TETO_ISS, getFaixa } from "./tabelas-simples";
 
-export type Horizonte = "2027" | "PLENO";
+export type { Horizonte };
+
+/** Redução da CBS em 2027–2028 (LC 214/2025, art. 347): 0,1 p.p., compensada pelo IBS de 0,1%. */
+export const REDUCAO_CBS_2027 = 0.001;
 
 /**
  * Regime de alíquota na saída (LC 214/2025). Define a redução aplicada ao IBS/CBS
@@ -54,12 +57,12 @@ export function regimePorReducao(reducao: number): RegimeSaida {
 export type VereditoTipo = "OPTAR" | "LIMITROFE" | "NEGOCIAR" | "MANTER";
 
 export interface Premissas {
-  cbsReferencia: number; // 0,0921
+  cbsReferencia: number; // CBS de 2027–2028 (já reduzida em 0,1 p.p.): 0,0911
   ibsTransicao: number; // 0,0010
   ivaPleno: number; // 0,265
   repasseEsperado: number; // 0,5
   saldoCredorRecuperavel: boolean; // true = recuperável (padrão)
-  horizonte: Horizonte; // "2027": sai só a CBS do DAS; "PLENO": saem CBS + IBS
+  horizonte: Horizonte; // ano de apuração: 2027–2028, 2029 a 2032 ou IVA pleno (2033+)
 }
 
 export interface DadosEmpresa {
@@ -76,7 +79,7 @@ export interface DadosEmpresa {
   reducaoCompras: number;
   /**
    * % da receita interna com ICMS já retido por substituição tributária (empresa
-   * substituída). Só Anexos I e II, e só enquanto existir ICMS (horizonte 2027):
+   * substituída). Só Anexos I e II, e só enquanto existir ICMS (até 2032):
    * nessa parte da receita o DAS é calculado sem a parcela do ICMS (LC 123, art. 18, §4-A).
    */
   pctSubstituicaoTributaria?: number;
@@ -92,12 +95,19 @@ export interface SimulationResult {
   aliquotaNominal: number;
   parcelaDeduzir: number;
   aliqEf: number;
+  /** Partilha no DAS do ano simulado: CBS, IBS e ICMS/ISS. */
   shareCBS: number;
   shareIBS: number;
-  /** 5ª faixa dos Anexos III/IV em 2027: ISS limitado a 5% da receita, partilha recalculada. */
+  /** Ausente em simulações salvas antes da transição ano a ano. */
+  shareICMSISS?: number;
+  /** 5ª faixa dos Anexos III/IV: ISS limitado ao teto do ano, partilha recalculada. */
   tetoISSAplicado: boolean;
+  tetoISS?: number | null;
   shareSai: number;
   shareTotal: number;
+  /** CBS e IBS do regime regular no ano (ausentes em simulações antigas). */
+  ivaCBS?: number;
+  ivaIBS?: number;
   iva: number;
   ivaSaida: number;
   ivaCompra: number;
@@ -108,7 +118,7 @@ export interface SimulationResult {
   /** Receita com ICMS-ST considerada e a redução que ela gera no DAS (igual nos dois cenários). */
   recST: number;
   reducaoDasST: number;
-  /** A ST foi aplicada? (Anexo I/II, horizonte 2027) */
+  /** A ST foi aplicada? (Anexo I/II, enquanto existir ICMS — até 2032) */
   stAplicada: boolean;
   // Cenário A — Simples puro
   dasExp: number;
@@ -167,26 +177,42 @@ export function calcularVeredito(
 export function simular({ empresa: e, premissas: p }: SimulationInput): SimulationResult {
   const tabela = getFaixa(e.anexo, e.faixa);
 
-  // 1. Alíquota efetiva
-  const aliqEf = aliquotaEfetiva(e.rbt12, tabela.aliquotaNominal, tabela.parcelaDeduzir);
+  // 1. Alíquota efetiva (em 2027–2028 a 6ª faixa tem nominal 0,1 p.p. menor)
+  const em2027 = p.horizonte === "2027";
+  const nominal = em2027 && tabela.nominal2027 !== undefined ? tabela.nominal2027 : tabela.aliquotaNominal;
+  const aliqEf = aliquotaEfetiva(e.rbt12, nominal, tabela.parcelaDeduzir);
 
-  // 2. Parcela que sai do DAS (partilha de 2027–2028 no horizonte 2027)
-  let { shareCBS, shareIBS } = tabela;
+  // 2. Partilha do ano (LC 214/2025, Anexos XVIII a XXII; LC 227/2026)
+  //    shareSai = CBS + IBS dentro do DAS (é o que sai no Híbrido); o ICMS/ISS fica no DAS.
+  const fracIBS = FRACAO_IBS[p.horizonte];
+  let shareCBS = em2027 && tabela.shareCBS2027 !== undefined ? tabela.shareCBS2027 : tabela.shareCBS;
+  let shareIBS = tabela.shareIBS * fracIBS;
+  let shareICMSISS = tabela.shareIBS - shareIBS;
+  // Teto do ISS (5ª faixa dos Anexos III e IV): acima dele o ISS fica fixo e o excedente
+  // (alíquota efetiva − teto) é repartido pelos coeficientes da lei.
   let tetoISSAplicado = false;
-  if (p.horizonte === "2027") {
-    if (tabela.shareCBS2027 !== undefined) shareCBS = tabela.shareCBS2027;
-    // Teto do ISS: acima dele o ISS fica em 5% da receita e o excedente vai para os tributos federais
-    if (tabela.cbsExcedente !== undefined && aliqEf * shareIBS > TETO_ISS) {
+  let tetoISS: number | null = null;
+  if (p.horizonte !== "PLENO" && e.faixa === 5 && (e.anexo === "III" || e.anexo === "IV")) {
+    const regra = TETO_ISS[p.horizonte];
+    if (aliqEf * shareICMSISS > regra.teto) {
       tetoISSAplicado = true;
-      shareIBS = TETO_ISS / aliqEf;
-      shareCBS = ((aliqEf - TETO_ISS) * tabela.cbsExcedente) / aliqEf;
+      tetoISS = regra.teto;
+      const coef = regra[e.anexo];
+      shareICMSISS = regra.teto / aliqEf;
+      shareCBS = ((aliqEf - regra.teto) * coef.cbs) / aliqEf;
+      shareIBS = ((aliqEf - regra.teto) * coef.ibs) / aliqEf;
     }
   }
-  const shareTotal = shareCBS + shareIBS;
-  const shareSai = p.horizonte === "2027" ? shareCBS : shareTotal;
+  const shareSai = shareCBS + shareIBS;
+  const shareTotal = shareSai + shareICMSISS;
 
-  // 3. Alíquotas do regime regular
-  const iva = p.horizonte === "2027" ? p.cbsReferencia + p.ibsTransicao : p.ivaPleno;
+  // 3. Alíquotas do regime regular no ano (LC 214/2025, arts. 344 e 347; ADCT, arts. 127 a 129)
+  //    2027–2028: CBS reduzida em 0,1 p.p. + IBS de 0,1%. 2029–2032: CBS cheia + fração do IBS
+  //    (a mesma proporção em que o ICMS/ISS vira IBS nas tabelas do Simples). 2033: IVA pleno.
+  const cbsCheia = p.cbsReferencia + REDUCAO_CBS_2027;
+  const ivaCBS = em2027 ? p.cbsReferencia : cbsCheia;
+  const ivaIBS = em2027 ? p.ibsTransicao : Math.max(p.ivaPleno - cbsCheia, 0) * fracIBS;
+  const iva = p.horizonte === "PLENO" ? p.ivaPleno : ivaCBS + ivaIBS;
   const ivaSaida = iva * (1 - e.reducaoSaida);
   const ivaCompra = iva * (1 - e.reducaoCompras);
 
@@ -195,16 +221,16 @@ export function simular({ empresa: e, premissas: p }: SimulationInput): Simulati
   const recInt = e.receitaMensal - recExp;
   const comp = e.receitaMensal * e.pctComprasCreditaveis;
 
-  // 5. Cenário A — Simples puro (exportação é imune à fatia CBS/IBS do DAS)
+  // 5. Cenário A — Simples puro (exportação é imune à fatia CBS/IBS/ICMS/ISS do DAS)
   const dasExp = recExp * aliqEf * (1 - shareTotal);
 
-  // ICMS-ST: na receita com ICMS já retido, o DAS sai sem a parcela do ICMS (shareIBS
-  // nos Anexos I/II). Só em 2027 — no IVA pleno o ICMS foi extinto e a ST deixa de existir.
-  // O ICMS continua no DAS nos dois cenários em 2027, então a redução é igual em ambos.
+  // ICMS-ST: na receita com ICMS já retido, o DAS sai sem a parcela do ICMS (Anexos I/II).
+  // Vale enquanto existir ICMS (até 2032); no IVA pleno o ICMS foi extinto e a ST deixa de existir.
+  // O ICMS continua no DAS nos dois cenários, então a redução é igual em ambos.
   const stAplicada =
-    p.horizonte === "2027" && (e.anexo === "I" || e.anexo === "II") && (e.pctSubstituicaoTributaria ?? 0) > 0;
+    p.horizonte !== "PLENO" && (e.anexo === "I" || e.anexo === "II") && (e.pctSubstituicaoTributaria ?? 0) > 0;
   const recST = stAplicada ? recInt * (e.pctSubstituicaoTributaria ?? 0) : 0;
-  const reducaoDasST = recST * aliqEf * shareIBS;
+  const reducaoDasST = recST * aliqEf * shareICMSISS;
 
   const dasPuro = recInt * aliqEf - reducaoDasST + dasExp;
   const credPuro = recInt * aliqEf * shareSai;
@@ -233,14 +259,18 @@ export function simular({ empresa: e, premissas: p }: SimulationInput): Simulati
   const veredito = calcularVeredito({ caixaSemNegociar, caixaComRepasse, repasseMin, tolerancia });
 
   return {
-    aliquotaNominal: tabela.aliquotaNominal,
+    aliquotaNominal: nominal,
     parcelaDeduzir: tabela.parcelaDeduzir,
     aliqEf,
     shareCBS,
     shareIBS,
+    shareICMSISS,
     tetoISSAplicado,
+    tetoISS,
     shareSai,
     shareTotal,
+    ivaCBS,
+    ivaIBS,
     iva,
     ivaSaida,
     ivaCompra,

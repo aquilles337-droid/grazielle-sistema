@@ -1,6 +1,7 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { REGIMES_SAIDA, VEREDITO_INFO, regimePorReducao, type SimulationInput, type SimulationResult, type VereditoTipo } from "@/lib/calc/motor";
-import { ANEXOS } from "@/lib/calc/tabelas-simples";
+import { linhaIvaAno, linhasPartilha } from "@/lib/calc/apresentacao";
+import { ANEXOS, horizonteLabel } from "@/lib/calc/tabelas-simples";
 import { formatBRL, formatCNPJ, formatDate, formatPct } from "@/lib/format";
 
 /*
@@ -156,7 +157,7 @@ export function SimulationReport({ escritorio, logo, contador, crc, empresa, tit
               <Text style={s.label}>Data da simulação</Text>
               <Text>{formatDate(data)}</Text>
               <Text style={[s.label, { marginTop: 6 }]}>Horizonte</Text>
-              <Text>{p.horizonte === "2027" ? "Transição 2027" : "IVA pleno"}</Text>
+              <Text>{horizonteLabel(p.horizonte)}</Text>
             </View>
           </View>
 
@@ -227,9 +228,10 @@ export function SimulationReport({ escritorio, logo, contador, crc, empresa, tit
               <Text style={s.sectionTitle}>Premissas</Text>
               <KV
                 rows={[
-                  ["CBS de referência", formatPct(p.cbsReferencia)],
-                  ["IBS de transição", formatPct(p.ibsTransicao)],
-                  ["IVA pleno", formatPct(p.ivaPleno)],
+                  ["CBS 2027–2028", formatPct(p.cbsReferencia)],
+                  ["IBS 2027–2028", formatPct(p.ibsTransicao)],
+                  ["IVA pleno (2033)", formatPct(p.ivaPleno)],
+                  ...linhaIvaAno(r),
                   ["Repasse esperado", formatPct(p.repasseEsperado)],
                   ["Saldo credor", p.saldoCredorRecuperavel ? "Recuperável" : "Não recuperável"],
                   ["Tolerância (0,3% receita)", formatBRL(r.tolerancia)],
@@ -244,8 +246,7 @@ export function SimulationReport({ escritorio, logo, contador, crc, empresa, tit
               <KV
                 rows={[
                   ["Alíquota efetiva", formatPct(r.aliqEf, 4)],
-                  [r.tetoISSAplicado ? "Partilha CBS / ISS (teto 5%)" : "Partilha CBS / IBS no DAS", `${formatPct(r.shareCBS)} / ${formatPct(r.shareIBS)}`],
-                  ["Parcela que sai do DAS", formatPct(r.shareSai)],
+                  ...linhasPartilha(r),
                   ["IVA saída / compras", `${formatPct(r.ivaSaida)} / ${formatPct(r.ivaCompra)}`],
                   ...(r.stAplicada
                     ? ([["DAS sem ICMS na ST (cada regime)", `-${formatBRL(r.reducaoDasST)}`]] as [string, string][])
@@ -267,8 +268,8 @@ export function SimulationReport({ escritorio, logo, contador, crc, empresa, tit
           </View>
 
           <Text style={{ fontSize: 7.5, color: C.muted, marginTop: 6, lineHeight: 1.4 }}>
-            Simulação de caráter estimativo, elaborada com base na LC 214/2025 e na partilha dos Anexos da LC 123/2006, a
-            partir das informações e premissas acima.
+            Simulação estimativa com base nas LCs 214/2025 e 227/2026 (partilha dos Anexos da LC 123/2006) e nas informações e
+            premissas acima.
           </Text>
         </View>
 
