@@ -84,8 +84,11 @@ os elementos destacados são marcados com `data-tour="..."`.
 
 ## Premissas de cálculo que vale revisar
 
+- **Base legal:** LC 214/2025 com as alterações da LC 227/2026 (texto em `docs/LC-227-2026.pdf`).
 - **Partilha CBS/IBS:** `shareCBS` = PIS + COFINS e `shareIBS` = ICMS (Anexos I/II) ou ISS (III/IV/V) da tabela de partilha da LC 123. Na 6ª faixa ICMS/ISS saem do DAS, então `shareIBS = 0`.
 - **Horizonte:** "2027" tira só a CBS do DAS e usa IVA = CBS + IBS de transição (9,11% + 0,1% = 9,21%); "Pleno" tira CBS + IBS e usa 26,5%.
+- **Partilha de 2027–2028 (LC 227/2026, Anexo XX):** as colunas CBS + IBS somam o antigo PIS + COFINS; no Anexo III, 6ª faixa, a CBS é 19,29%. Na 5ª faixa dos Anexos III e IV o ISS é limitado a 5% da receita e o excedente (alíquota efetiva − 5%) é repartido — 23,46% (Anexo III) e 36,67% (Anexo IV) vão para CBS + IBS.
+- **Opção pelo Híbrido:** semestral (janeiro ou julho), exercida em setembro ou março, irretratável no semestre (LC 123, art. 13, §§ 9º e 10).
 - **Exportação:** o DAS sobre exportação exclui a fatia CBS+IBS (`shareTotal`) nos dois horizontes.
 - **RBT12 = 0** (início de atividade): usa a alíquota nominal.
 - **Repasse mínimo:** `null` ("Inviável") quando o ganho do cliente é ≤ 0.

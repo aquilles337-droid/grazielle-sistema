@@ -8,7 +8,14 @@
  *
  * Na 6ª faixa ICMS/ISS são recolhidos fora do DAS (sublimite), por isso shareIBS = 0.
  * Valores em fração (0,155 = 15,5%).
+ *
+ * Conferido com a LC 227/2026 (Anexos XX e XXI, que dão nova redação às tabelas da LC 123):
+ * em 2027–2028 as colunas CBS + IBS somam o antigo PIS + COFINS, e de 2029 a 2032 o
+ * ISS/ICMS + IBS somam a antiga fatia do ISS/ICMS.
  */
+
+/** Teto do ISS no DAS em 2027–2028 (LC 123, Anexos III e IV, 5ª faixa; LC 227/2026, Anexo XX). */
+export const TETO_ISS = 0.05;
 
 export type Anexo = "I" | "II" | "III" | "IV" | "V";
 export type Faixa = 1 | 2 | 3 | 4 | 5 | 6;
@@ -20,6 +27,14 @@ export interface FaixaSimples {
   parcelaDeduzir: number; // R$
   shareCBS: number;
   shareIBS: number;
+  /**
+   * 5ª faixa dos Anexos III e IV: quando o ISS passaria de 5% da receita, ele fica fixo em 5% e o
+   * excedente (alíquota efetiva − 5%) é repartido — `cbsExcedente` é a fatia desse excedente que
+   * cabe a CBS + IBS (antigo PIS + COFINS).
+   */
+  cbsExcedente?: number;
+  /** Partilha CBS (+ IBS) específica de 2027–2028, quando difere da regra geral. */
+  shareCBS2027?: number;
 }
 
 const f = (
@@ -63,8 +78,10 @@ export const TABELAS_SIMPLES: Record<Anexo, FaixaSimples[]> = {
     f(2, 360_000, 11.2, 9_360, 17.1, 32.0),
     f(3, 720_000, 13.5, 17_640, 16.6, 32.5),
     f(4, 1_800_000, 16.0, 35_640, 16.6, 32.5),
-    f(5, 3_600_000, 21.0, 125_640, 15.6, 33.5),
-    f(6, 4_800_000, 33.0, 648_000, 19.5, 0),
+    // 5ª faixa: ISS limitado a 5% → excedente × (CBS 23,20% + IBS 0,26%)
+    { ...f(5, 3_600_000, 21.0, 125_640, 15.6, 33.5), cbsExcedente: 0.2346 },
+    // 6ª faixa em 2027–2028: CBS 19,29% (LC 227/2026, Anexo XX)
+    { ...f(6, 4_800_000, 33.0, 648_000, 19.5, 0), shareCBS2027: 0.1929 },
   ],
   // Serviços com CPP fora do DAS (construção, vigilância, limpeza, advocacia)
   IV: [
@@ -72,7 +89,8 @@ export const TABELAS_SIMPLES: Record<Anexo, FaixaSimples[]> = {
     f(2, 360_000, 9.0, 8_100, 25.0, 40.0),
     f(3, 720_000, 10.2, 12_420, 24.0, 40.0),
     f(4, 1_800_000, 14.0, 39_780, 23.0, 40.0),
-    f(5, 3_600_000, 22.0, 183_780, 22.0, 40.0),
+    // 5ª faixa: ISS limitado a 5% → excedente × (COFINS 30,13% + PIS 6,54%)
+    { ...f(5, 3_600_000, 22.0, 183_780, 22.0, 40.0), cbsExcedente: 0.3667 },
     f(6, 4_800_000, 33.0, 828_000, 25.0, 0),
   ],
   // Serviços intelectuais (Fator R < 28%)

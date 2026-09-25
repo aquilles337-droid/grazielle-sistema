@@ -244,7 +244,7 @@ export function SimulationReport({ escritorio, logo, contador, crc, empresa, tit
               <KV
                 rows={[
                   ["Alíquota efetiva", formatPct(r.aliqEf, 4)],
-                  ["Partilha CBS / IBS no DAS", `${formatPct(r.shareCBS)} / ${formatPct(r.shareIBS)}`],
+                  [r.tetoISSAplicado ? "Partilha CBS / ISS (teto 5%)" : "Partilha CBS / IBS no DAS", `${formatPct(r.shareCBS)} / ${formatPct(r.shareIBS)}`],
                   ["Parcela que sai do DAS", formatPct(r.shareSai)],
                   ["IVA saída / compras", `${formatPct(r.ivaSaida)} / ${formatPct(r.ivaCompra)}`],
                   ...(r.stAplicada

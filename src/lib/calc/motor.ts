@@ -8,7 +8,7 @@
  * Convenção: TODOS os percentuais são frações (0,5 = 50%). Valores em R$.
  */
 
-import { type Anexo, type Faixa, getFaixa } from "./tabelas-simples";
+import { type Anexo, type Faixa, TETO_ISS, getFaixa } from "./tabelas-simples";
 
 export type Horizonte = "2027" | "PLENO";
 
@@ -94,6 +94,8 @@ export interface SimulationResult {
   aliqEf: number;
   shareCBS: number;
   shareIBS: number;
+  /** 5ª faixa dos Anexos III/IV em 2027: ISS limitado a 5% da receita, partilha recalculada. */
+  tetoISSAplicado: boolean;
   shareSai: number;
   shareTotal: number;
   iva: number;
@@ -168,8 +170,18 @@ export function simular({ empresa: e, premissas: p }: SimulationInput): Simulati
   // 1. Alíquota efetiva
   const aliqEf = aliquotaEfetiva(e.rbt12, tabela.aliquotaNominal, tabela.parcelaDeduzir);
 
-  // 2. Parcela que sai do DAS
-  const { shareCBS, shareIBS } = tabela;
+  // 2. Parcela que sai do DAS (partilha de 2027–2028 no horizonte 2027)
+  let { shareCBS, shareIBS } = tabela;
+  let tetoISSAplicado = false;
+  if (p.horizonte === "2027") {
+    if (tabela.shareCBS2027 !== undefined) shareCBS = tabela.shareCBS2027;
+    // Teto do ISS: acima dele o ISS fica em 5% da receita e o excedente vai para os tributos federais
+    if (tabela.cbsExcedente !== undefined && aliqEf * shareIBS > TETO_ISS) {
+      tetoISSAplicado = true;
+      shareIBS = TETO_ISS / aliqEf;
+      shareCBS = ((aliqEf - TETO_ISS) * tabela.cbsExcedente) / aliqEf;
+    }
+  }
   const shareTotal = shareCBS + shareIBS;
   const shareSai = p.horizonte === "2027" ? shareCBS : shareTotal;
 
@@ -226,6 +238,7 @@ export function simular({ empresa: e, premissas: p }: SimulationInput): Simulati
     aliqEf,
     shareCBS,
     shareIBS,
+    tetoISSAplicado,
     shareSai,
     shareTotal,
     iva,
@@ -263,7 +276,8 @@ export function simular({ empresa: e, premissas: p }: SimulationInput): Simulati
 export const VEREDITO_INFO: Record<VereditoTipo, { titulo: string; descricao: string }> = {
   OPTAR: {
     titulo: "Optar pelo Híbrido",
-    descricao: "O regime híbrido gera caixa acima da tolerância, com ou sem negociação de preço.",
+    descricao:
+      "O regime híbrido gera caixa acima da tolerância, com ou sem negociação de preço. A opção vale por semestre (janeiro ou julho), é feita em setembro ou março e é irretratável no semestre (LC 123, art. 13, §§ 9º e 10).",
   },
   LIMITROFE: {
     titulo: "Limítrofe",

@@ -182,3 +182,39 @@ describe("substituição tributária (ICMS-ST)", () => {
     expect(r.reducaoDasST).toBeCloseTo(50_000 * r.aliqEf * 0.32, 6);
   });
 });
+
+describe("partilha de 2027–2028 (LC 227/2026)", () => {
+  const p2027 = { ...PREMISSAS_PADRAO, horizonte: "2027" as const };
+
+  it("Anexo III, 5ª faixa: ISS limitado a 5% e excedente × 23,46% para CBS + IBS", () => {
+    // RBT12 3,0 mi → alíquota efetiva (3.000.000 × 21% − 125.640) ÷ 3.000.000 = 16,812%
+    const r = simular({ empresa: { ...base, anexo: "III", faixa: 5, rbt12: 3_000_000 }, premissas: p2027 });
+    expect(r.aliqEf).toBeCloseTo(0.16812, 6);
+    expect(r.tetoISSAplicado).toBe(true);
+    expect(r.aliqEf * r.shareIBS).toBeCloseTo(0.05, 9);
+    expect(r.aliqEf * r.shareSai).toBeCloseTo((0.16812 - 0.05) * 0.2346, 9);
+  });
+
+  it("Anexo III, 5ª faixa abaixo de 14,92537%: partilha normal", () => {
+    const r = simular({ empresa: { ...base, anexo: "III", faixa: 5, rbt12: 1_900_000 }, premissas: p2027 });
+    expect(r.tetoISSAplicado).toBe(false);
+    expect(r.shareSai).toBeCloseTo(0.156, 9);
+  });
+
+  it("Anexo IV, 5ª faixa acima de 12,5%: excedente × 36,67%", () => {
+    const r = simular({ empresa: { ...base, anexo: "IV", faixa: 5, rbt12: 3_000_000 }, premissas: p2027 });
+    expect(r.tetoISSAplicado).toBe(true);
+    expect(r.aliqEf * r.shareSai).toBeCloseTo((r.aliqEf - 0.05) * 0.3667, 9);
+  });
+
+  it("Anexo III, 6ª faixa: CBS de 19,29% em 2027 e 19,50% no pleno", () => {
+    const e = { ...base, anexo: "III" as const, faixa: 6 as const, rbt12: 4_000_000 };
+    expect(simular({ empresa: e, premissas: p2027 }).shareSai).toBeCloseTo(0.1929, 9);
+    expect(simular({ empresa: e, premissas: PREMISSAS_PADRAO }).shareSai).toBeCloseTo(0.195, 9);
+  });
+
+  it("teto do ISS não se aplica no IVA pleno (ISS extinto)", () => {
+    const r = simular({ empresa: { ...base, anexo: "III", faixa: 5, rbt12: 3_000_000 }, premissas: PREMISSAS_PADRAO });
+    expect(r.tetoISSAplicado).toBe(false);
+  });
+});

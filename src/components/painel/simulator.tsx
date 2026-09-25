@@ -508,7 +508,7 @@ function Memoria({ result: r }: { result: SimulationResult }) {
   const items: [string, string][] = [
     ["Alíquota nominal / parcela a deduzir", `${formatPct(r.aliquotaNominal)} / ${formatBRL(r.parcelaDeduzir)}`],
     ["Alíquota efetiva", formatPct(r.aliqEf, 4)],
-    ["Partilha CBS / IBS no DAS", `${formatPct(r.shareCBS)} / ${formatPct(r.shareIBS)}`],
+    [r.tetoISSAplicado ? "Partilha CBS / ISS (teto 5%)" : "Partilha CBS / IBS no DAS", `${formatPct(r.shareCBS)} / ${formatPct(r.shareIBS)}`],
     ["Parcela que sai do DAS", formatPct(r.shareSai)],
     ["IVA saída / compras", `${formatPct(r.ivaSaida)} / ${formatPct(r.ivaCompra)}`],
     ["Receita interna / exportação", `${formatBRL(r.recInt)} / ${formatBRL(r.recExp)}`],
